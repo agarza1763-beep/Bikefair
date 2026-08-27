@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+:root {
+  --background: #faf9f6;
+  --foreground: #14171a;
+
+  --color-charcoal-950: #0b0d0e;
+  --color-charcoal-900: #14171a;
+  --color-charcoal-800: #1e2225;
+  --color-charcoal-700: #2b3033;
+  --color-charcoal-600: #3d4347;
+  --color-charcoal-400: #6b7378;
+  --color-charcoal-200: #d3d8da;
+  --color-charcoal-100: #e8ebec;
+  --color-charcoal-50: #f4f5f5;
+
+  --color-green-900: #0e3a26;
+  --color-green-800: #124a30;
+  --color-green-700: #16593a;
+  --color-green-600: #1c6b47;
+  --color-green-500: #237f55;
+  --color-green-100: #e2f3ea;
+  --color-green-50: #f1f9f4;
+
+  --color-accent-500: #c8ff3d;
+  --color-accent-600: #a9e017;
+  --color-accent-700: #8bb912;
+
+  --color-amber-500: #e8a317;
+  --color-amber-100: #fdf1dc;
+  --color-red-500: #d94848;
+  --color-red-100: #fbe7e7;
+
+  --color-cream: #faf9f6;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-manrope);
+
+  --color-charcoal-950: var(--color-charcoal-950);
+  --color-charcoal-900: var(--color-charcoal-900);
+  --color-charcoal-800: var(--color-charcoal-800);
+  --color-charcoal-700: var(--color-charcoal-700);
+  --color-charcoal-600: var(--color-charcoal-600);
+  --color-charcoal-400: var(--color-charcoal-400);
+  --color-charcoal-200: var(--color-charcoal-200);
+  --color-charcoal-100: var(--color-charcoal-100);
+  --color-charcoal-50: var(--color-charcoal-50);
+
+  --color-green-900: var(--color-green-900);
+  --color-green-800: var(--color-green-800);
+  --color-green-700: var(--color-green-700);
+  --color-green-600: var(--color-green-600);
+  --color-green-500: var(--color-green-500);
+  --color-green-100: var(--color-green-100);
+  --color-green-50: var(--color-green-50);
+
+  --color-accent-500: var(--color-accent-500);
+  --color-accent-600: var(--color-accent-600);
+  --color-accent-700: var(--color-accent-700);
+
+  --color-amber-500: var(--color-amber-500);
+  --color-amber-100: var(--color-amber-100);
+  --color-red-500: var(--color-red-500);
+  --color-red-100: var(--color-red-100);
+  --color-cream: var(--color-cream);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.font-display {
+  font-family: var(--font-manrope), var(--font-inter), sans-serif;
+}
+
+::selection {
+  background: var(--color-accent-500);
+  color: var(--color-charcoal-950);
+}
+
+@layer components {
+  .input {
+    @apply w-full rounded-lg border border-charcoal-200 bg-white px-3 py-2 text-sm text-charcoal-900 placeholder:text-charcoal-400 focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600;
+  }
+  .textarea {
+    @apply w-full rounded-lg border border-charcoal-200 bg-white px-3 py-2 text-sm text-charcoal-900 placeholder:text-charcoal-400 focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600;
+  }
+  .label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-charcoal-400;
+  }
+  .card {
+    @apply rounded-2xl border border-charcoal-100 bg-white;
+  }
+}

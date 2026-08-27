@@ -1,0 +1,482 @@
+// BikeFair — Prisma schema
+// NOTE ON DATABASE PROVIDER: The spec calls for PostgreSQL, and this schema is written to be
+// Postgres-compatible (no SQLite-only features are used). This environment has no Docker/Postgres
+// server available, so local dev defaults to SQLite (zero-config, file-based) via DATABASE_URL in
+// .env. To run on Postgres, change `provider` below to "postgresql" and point DATABASE_URL at a
+// real instance (a docker-compose.yml is included for this). See README for the exact steps.
+//
+// Enums are intentionally modeled as `String` (validated in application code against the TS union
+// types in src/lib/constants.ts) rather than Prisma `enum` types, because Prisma enums are not
+// supported on SQLite — this keeps the same schema working unmodified on both providers.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================= USERS =============================
+
+model User {
+  id                String   @id @default(cuid())
+  name              String
+  email             String   @unique
+  emailVerified     DateTime?
+  phone             String?
+  phoneVerified     Boolean  @default(false)
+  passwordHash      String
+  image             String?
+  bio               String?
+  city              String?
+  state             String?
+  zip               String?
+  lat               Float?
+  lng               Float?
+
+  role              String   @default("USER") // USER | ADMIN
+  verificationLevel String   @default("BASIC") // BASIC | VERIFIED | TRUSTED
+  isTrustedSeller   Boolean  @default(false)
+  isSuspended       Boolean  @default(false)
+  isDemo            Boolean  @default(false)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  listings              BikeListing[]
+  sentMessages          Message[]        @relation("MessageSender")
+  conversationsAsBuyer  Conversation[]   @relation("ConversationBuyer")
+  conversationsAsSeller Conversation[]   @relation("ConversationSeller")
+  savedListings         SavedListing[]
+  offersMade            Offer[]          @relation("OfferBuyer")
+  reviewsGiven          Review[]         @relation("ReviewReviewer")
+  reviewsReceived       Review[]         @relation("ReviewReviewee")
+  reportsFiled          Report[]         @relation("ReportReporter")
+  reportsAgainst        Report[]         @relation("ReportReportedUser")
+  transactionsAsBuyer   Transaction[]    @relation("TransactionBuyer")
+  transactionsAsSeller  Transaction[]    @relation("TransactionSeller")
+  verifications         Verification[]
+  adminActions          AdminAction[]
+  emailTokens           EmailVerificationToken[]
+  blocksInitiated       Block[]          @relation("BlockBlocker")
+  blocksReceived        Block[]          @relation("BlockBlocked")
+  paymentRecords        PaymentRecord[]
+  bikeShop              BikeShop?
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Verification {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       String    // EMAIL | PHONE | IDENTITY
+  status     String    @default("PENDING") // PENDING | VERIFIED | FAILED
+  provider   String?   // e.g. "stub", future: "persona", "stripe_identity"
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+model Block {
+  id        String   @id @default(cuid())
+  blockerId String
+  blocker   User     @relation("BlockBlocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User     @relation("BlockBlocked", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+}
+
+// ============================= LISTINGS =============================
+
+model BikeListing {
+  id             String   @id @default(cuid())
+  sellerId       String
+  seller         User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  title          String
+  category       String   // ROAD | MOUNTAIN | GRAVEL | HYBRID | COMMUTER | BMX | CRUISER | EBIKE | KIDS | FOLDING | TOURING | TRIATHLON | OTHER
+  brand          String
+  model          String
+  year           Int
+  frameSize      String
+  wheelSize      String?
+  color          String?
+  frameMaterial  String   // CARBON | ALUMINUM | STEEL | TITANIUM | CHROMOLY | OTHER
+  groupset       String?
+  brakeType      String?
+  suspension     String?
+  wheelset       String?
+  wheelsUpgraded Boolean  @default(false)
+  mileageLevel   String?  // UNDER_100 | UNDER_500 | UNDER_1000 | UNDER_5000 | OVER_5000 | UNKNOWN
+  condition      String   // NEW | EXCELLENT | GOOD | FAIR | POOR
+  description    String
+  upgrades       String?
+  originalMsrp   Int?     // cents
+
+  serialNumber   String?  // internal only — never returned by public read paths
+  serialStatus   String   @default("NOT_SUBMITTED") // NOT_SUBMITTED | NOT_VERIFIED | PENDING_REVIEW | VERIFIED | POTENTIAL_ISSUE | REVIEW_REQUIRED
+
+  askingPrice    Int      // cents
+  status         String   @default("DRAFT") // DRAFT | ACTIVE | PENDING | SOLD | REMOVED
+
+  city           String
+  state          String
+  zip            String?
+  lat            Float?
+  lng            Float?
+
+  prefersPublicMeetup    Boolean @default(true)
+  prefersBikeShopMeetup  Boolean @default(true)
+  prefersLawEnforcement  Boolean @default(false)
+  meetupNotes            String?
+
+  isFeatured     Boolean  @default(false)
+  isPremium      Boolean  @default(false)
+  isDemo         Boolean  @default(false)
+  viewCount      Int      @default(0)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  publishedAt    DateTime?
+  soldAt         DateTime?
+
+  images         BikeImage[]
+  components     BikeComponent[]
+  valuations     BikeValuation[]
+  conversations  Conversation[]
+  offers         Offer[]
+  savedBy        SavedListing[]
+  reports        Report[]
+  transaction    Transaction?
+  serialReview   SerialNumberReview?
+
+  @@index([category])
+  @@index([status])
+  @@index([city, state])
+}
+
+model BikeImage {
+  id        String      @id @default(cuid())
+  listingId String
+  listing   BikeListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  url       String
+  position  Int         @default(0)
+  altText   String?
+  createdAt DateTime    @default(now())
+}
+
+model BikeComponent {
+  id        String      @id @default(cuid())
+  listingId String
+  listing   BikeListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  category  String      // e.g. Drivetrain, Wheels, Cockpit, Saddle, Tires, Brakes
+  name      String
+  notes     String?
+}
+
+model BikeValuation {
+  id                       String      @id @default(cuid())
+  listingId                String
+  listing                  BikeListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  estimatedLow             Int
+  estimatedMid             Int
+  estimatedHigh            Int
+
+  askingPriceSnapshot      Int
+  pricePositionPct         Float
+  pricePositionLabel       String // FAIR | SLIGHTLY_ABOVE | SLIGHTLY_BELOW | SIGNIFICANTLY_ABOVE | SIGNIFICANTLY_BELOW
+
+  breakdown                String  // JSON string: Array<{ label: string; amount: number; note?: string }>
+  engineVersion            String  @default("rules-v1")
+  isCurrent                Boolean @default(true)
+
+  createdAt                DateTime @default(now())
+}
+
+// ============================= MESSAGING =============================
+
+model Conversation {
+  id         String   @id @default(cuid())
+  listingId  String
+  listing    BikeListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyerId    String
+  buyer      User     @relation("ConversationBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  sellerId   String
+  seller     User     @relation("ConversationSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  messages   Message[]
+  offers     Offer[]
+  meetups    Meetup[]
+
+  @@unique([listingId, buyerId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  body           String
+  isQuickMessage Boolean      @default(false)
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+}
+
+model Offer {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  listingId      String
+  listing        BikeListing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyerId        String
+  buyer          User         @relation("OfferBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+
+  amount         Int
+  status         String       @default("PENDING") // PENDING | ACCEPTED | DECLINED | WITHDRAWN
+  message        String?
+
+  createdAt      DateTime     @default(now())
+  respondedAt    DateTime?
+}
+
+// ============================= MEETUPS =============================
+
+model Meetup {
+  id                  String       @id @default(cuid())
+  conversationId      String
+  conversation        Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  type                String       // PUBLIC | BIKE_SHOP | LAW_ENFORCEMENT
+  bikeShopId          String?
+  bikeShop            BikeShop?    @relation(fields: [bikeShopId], references: [id])
+
+  locationName        String
+  address             String?
+  city                String?
+  state               String?
+  lat                 Float?
+  lng                 Float?
+
+  scheduledAt         DateTime?
+  status              String       @default("PROPOSED") // PROPOSED | CONFIRMED | COMPLETED | CANCELLED
+  inspectionRequested Boolean      @default(false)
+  notes               String?
+
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  transaction         Transaction?
+}
+
+model BikeShop {
+  id               String   @id @default(cuid())
+  ownerUserId      String?  @unique
+  ownerUser        User?    @relation(fields: [ownerUserId], references: [id])
+
+  name             String
+  description      String?
+  address          String
+  city             String
+  state            String
+  zip              String?
+  lat              Float?
+  lng              Float?
+  phone            String?
+  email            String?
+  website          String?
+  hoursJson        String?  // JSON string keyed by day
+
+  offersInspection Boolean  @default(false)
+  inspectionFeeCents Int?
+  isVerified       Boolean  @default(false)
+  isDemo           Boolean  @default(false)
+  meetupCount      Int      @default(0)
+
+  // Paid partner membership ($/month, see Fee type BIKE_SHOP_MEMBERSHIP) — a shop that self-signs
+  // up via /bike-shops/join starts PENDING until an admin reviews and approves it; shops added
+  // directly by an admin (e.g. via /admin/bike-shops/new) default to ACTIVE with no review step.
+  membershipStatus     String    @default("ACTIVE") // NONE | PENDING | ACTIVE | CANCELLED
+  membershipApprovedAt DateTime?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  meetups          Meetup[]
+  paymentRecords   PaymentRecord[]
+}
+
+// ============================= TRANSACTIONS & REVIEWS =============================
+
+model Transaction {
+  id                 String      @id @default(cuid())
+  listingId          String      @unique
+  listing            BikeListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyerId            String
+  buyer              User        @relation("TransactionBuyer", fields: [buyerId], references: [id])
+  sellerId           String
+  seller             User        @relation("TransactionSeller", fields: [sellerId], references: [id])
+
+  agreedPrice        Int
+  meetupId           String?     @unique
+  meetup             Meetup?     @relation(fields: [meetupId], references: [id])
+
+  status             String      @default("PENDING") // PENDING | BUYER_CONFIRMED | SELLER_CONFIRMED | COMPLETED | CANCELLED
+  buyerConfirmedAt   DateTime?
+  sellerConfirmedAt  DateTime?
+
+  sellerClosingFeeCents Int?
+  isDemo             Boolean     @default(false)
+
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  reviews            Review[]
+  paymentRecords     PaymentRecord[]
+}
+
+model Review {
+  id                   String      @id @default(cuid())
+  transactionId        String
+  transaction          Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  reviewerId           String
+  reviewer             User        @relation("ReviewReviewer", fields: [reviewerId], references: [id])
+  revieweeId           String
+  reviewee             User        @relation("ReviewReviewee", fields: [revieweeId], references: [id])
+
+  overallRating        Int
+  communicationRating  Int
+  reliabilityRating    Int
+  accuracyRating       Int
+  comment              String?
+
+  createdAt            DateTime    @default(now())
+
+  @@unique([transactionId, reviewerId])
+}
+
+// ============================= SAFETY / TRUST =============================
+
+model Report {
+  id             String       @id @default(cuid())
+  reporterId     String
+  reporter       User         @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUserId String?
+  reportedUser   User?        @relation("ReportReportedUser", fields: [reportedUserId], references: [id])
+  listingId      String?
+  listing        BikeListing? @relation(fields: [listingId], references: [id])
+
+  type           String       // STOLEN_SUSPECTED | FRAUD | FAKE_LISTING | MISREPRESENTATION | UNSAFE_BEHAVIOR | HARASSMENT | NO_SHOW | OTHER
+  description    String
+  status         String       @default("OPEN") // OPEN | IN_REVIEW | RESOLVED | DISMISSED
+  adminNotes     String?
+  resolvedById   String?
+
+  createdAt      DateTime     @default(now())
+  resolvedAt     DateTime?
+}
+
+model SerialNumberReview {
+  id             String      @id @default(cuid())
+  listingId      String      @unique
+  listing        BikeListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  status         String      @default("NOT_VERIFIED") // NOT_VERIFIED | PENDING_REVIEW | VERIFIED | POTENTIAL_ISSUE | REVIEW_REQUIRED
+  adminNotes     String?
+  reviewedById   String?
+  reviewedAt     DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model AdminAction {
+  id         String   @id @default(cuid())
+  adminId    String
+  admin      User     @relation(fields: [adminId], references: [id])
+  actionType String   // SUSPEND_USER | REMOVE_LISTING | RESOLVE_REPORT | FLAG_SERIAL | UPDATE_FEE | UPDATE_VALUATION_RULE | VERIFY_BIKE_SHOP ...
+  targetType String   // USER | LISTING | REPORT | SERIAL | FEE | VALUATION_RULE | BIKE_SHOP
+  targetId   String
+  notes      String?
+  createdAt  DateTime @default(now())
+}
+
+model SavedListing {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   BikeListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+
+  @@unique([userId, listingId])
+}
+
+// ============================= FEES & PAYMENTS (marketplace fees only — never the bicycle price) =============================
+
+model Fee {
+  id           String   @id @default(cuid())
+  type         String   @unique // LISTING | FEATURED_LISTING | PREMIUM_LISTING | SELLER_CLOSING | VALUATION_REPORT
+  name         String
+  amountCents  Int      @default(0)
+  isPercentage Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  description  String?
+  updatedAt    DateTime @updatedAt
+}
+
+model PaymentRecord {
+  id            String       @id @default(cuid())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id])
+  transactionId String?
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+  bikeShopId    String?
+  bikeShop      BikeShop?    @relation(fields: [bikeShopId], references: [id])
+  feeType       String
+  amountCents   Int
+  status        String       @default("SUCCEEDED") // demo/stub payment provider — website fees only
+  provider      String       @default("stub")
+  createdAt     DateTime     @default(now())
+}
+
+// ============================= VALUATION RULES (admin-configurable) =============================
+
+model ValuationRule {
+  id         String   @id @default(cuid())
+  key        String   @unique
+  category   String   // DEPRECIATION | CONDITION | MATERIAL | GROUPSET_TIER | WHEEL_UPGRADE | MARKET | WEAR | BASE_PRICE | RANGE
+  label      String
+  value      Float
+  valueType  String   // MULTIPLIER | FLAT_ADD_CENTS | FLAT_PERCENT
+  isActive   Boolean  @default(true)
+  updatedAt  DateTime @updatedAt
+}
+
+// ============================= BRAND TRUST (admin-configurable allowlist) =============================
+
+// Admin-maintained allowlist of recognized bicycle/e-bike manufacturers. Any listing whose `brand`
+// doesn't match an active entry here (case-insensitive) shows a caution badge to buyers — this is
+// a warning, not a block; sellers can still list and the listing still goes live normally. Matching
+// is done in application code (see src/lib/brands.ts) rather than DB collation, so it behaves the
+// same on SQLite and Postgres.
+model RecognizedBrand {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  notes     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
