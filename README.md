@@ -24,24 +24,23 @@ A marketplace built specifically for buying and selling **used bicycles** locall
 |---|---|---|
 | Frontend/Backend | Next.js 16 (App Router), TypeScript, Server Actions | One framework for pages, API, and mutations; Server Actions replace a separate REST layer for a cleaner, more type-safe MVP backend. |
 | Styling | Tailwind CSS v4 | Fast to build a distinctive, non-generic design system with custom brand tokens (see `src/app/globals.css`). |
-| Database ORM | Prisma | Clean, typed schema; provider is swappable with a one-line change (see below). |
-| Database (local dev) | **SQLite** | See callout below — this is a deliberate deviation from the "PostgreSQL" spec, made because this build environment has no Docker/Postgres server available. |
-| Database (production) | PostgreSQL (recommended) | Schema is written to be Postgres-compatible with no code changes beyond the datasource `provider` line. |
+| Database ORM | Prisma | Clean, typed schema. |
+| Database | **PostgreSQL** | Point `DATABASE_URL` at any Postgres instance — a free [Neon](https://neon.com) or [Supabase](https://supabase.com) project works fine, no server to manage. |
 | Auth | NextAuth (Auth.js) v5, credentials + JWT sessions | Reputable, well-supported auth library; JWT strategy avoids needing the full adapter schema for an email/password-only MVP. |
 | Image storage | Local disk (`public/uploads`) behind a `StorageProvider` interface | Zero-config for local dev; swap in S3/R2 by implementing `S3StorageProvider` in `src/lib/storage.ts` (env vars already scaffolded). |
 | Maps/geocoding | Deterministic demo geocoder behind a `geocode()` function | No Google Maps/Mapbox key is configured; swap in a real provider in `src/lib/geo.ts` without touching any caller. |
 | Email | Console-logged "dev mailer" behind `sendMail()` | No email provider configured; verification links print to the terminal running `npm run dev`. Swap in Resend/SES/etc. in `src/lib/mailer.ts`. |
 | Payments | Not implemented (by design) | The spec explicitly excludes bicycle-purchase payment processing from the MVP. A `PaymentRecord` table and fee engine exist for **marketplace fees only**, with a clean seam to add a real processor (e.g. Stripe) later. |
 
-### ⚠️ Why SQLite instead of PostgreSQL for local dev
+### Database setup
 
-The spec's preferred stack is PostgreSQL. This build environment has no Docker and no PostgreSQL server installed, and installing/configuring a full Postgres service reliably in an unattended build was judged riskier than the alternative — so, per the "make a reasonable decision and keep building" instruction, local dev defaults to **SQLite** (zero-config, a single file at `prisma/dev.db`).
+The app was originally developed against local SQLite (this build environment had no Postgres server available at the time) and later moved to PostgreSQL with a one-line provider change — the schema was written to be Postgres-compatible from the start (no SQLite-only types), so nothing else needed to change. "Enums" are still modeled as validated `String` columns rather than Prisma `enum` types (see `src/lib/constants.ts` for the TS union types and `src/lib/validation.ts` for the Zod schemas) — a holdover from the SQLite period that costs nothing on Postgres.
 
-The schema (`prisma/schema.prisma`) is written to be Postgres-compatible: no SQLite-only types, and every "enum" is modeled as a validated `String` column (Prisma enums aren't supported on SQLite, so this keeps one schema working unmodified on both providers). **To run on real PostgreSQL:**
+To run it:
 
-1. Change `provider = "sqlite"` to `provider = "postgresql"` in `prisma/schema.prisma`.
-2. Point `DATABASE_URL` in `.env` at a real Postgres instance, e.g. `postgresql://bikefair:bikefair@localhost:5432/bikefair?schema=public`.
-3. Run `npm run db:push` (or `npx prisma migrate dev` once you want real migrations instead of `db push`).
+1. Create a free Postgres project at [Neon](https://neon.com) or [Supabase](https://supabase.com) (or use any Postgres host you already have).
+2. Copy its connection string into `DATABASE_URL` in `.env`.
+3. Run `npm run db:push` to create the schema (or `npx prisma migrate dev` once you want real tracked migrations instead of `db push`).
 
 ## Project structure
 
@@ -91,7 +90,7 @@ Every numeric knob (depreciation curve, material multipliers, condition/wear adj
 
 ### Prerequisites
 - Node.js 20+ and npm
-- (Optional, production) A PostgreSQL server if you switch off SQLite per the callout above
+- A PostgreSQL database — a free [Neon](https://neon.com) or [Supabase](https://supabase.com) project takes about two minutes to create
 
 ### Setup
 
@@ -99,8 +98,8 @@ Every numeric knob (depreciation curve, material multipliers, condition/wear adj
 git clone <this-repo>
 cd bikefair
 npm install
-cp .env.example .env      # then edit values as needed (a random AUTH_SECRET is required)
-npm run db:push           # creates prisma/dev.db and syncs the schema
+cp .env.example .env      # then edit values: DATABASE_URL and a random AUTH_SECRET are required
+npm run db:push           # creates the schema in your Postgres database
 npm run db:seed           # loads realistic demo data (see below)
 npm run dev                # http://localhost:3000
 ```
@@ -113,7 +112,7 @@ See `.env.example` for the full annotated list. The essentials to get running lo
 
 | Variable | Required | Notes |
 |---|---|---|
-| `DATABASE_URL` | Yes | `file:./dev.db` for SQLite; a `postgresql://...` URL if you switch providers. |
+| `DATABASE_URL` | Yes | A `postgresql://...` connection string (Neon/Supabase/any Postgres host). |
 | `AUTH_SECRET` | Yes | Random 32-byte secret for NextAuth session signing. Generate with `npx auth secret` or `openssl rand -base64 32`. |
 | `NEXTAUTH_URL` | Yes | `http://localhost:3000` for local dev. |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | No | Used by `prisma/seed.ts` to create the admin account; defaults shown below if unset. |
@@ -159,16 +158,15 @@ npm run db:studio     # Prisma Studio — browse/edit the database visually
 
 ## Deployment
 
-1. Provision a PostgreSQL database and switch the Prisma provider (see the SQLite callout above).
-2. Set all required env vars on your host (Vercel, Fly.io, Railway, a VPS, etc.).
+1. Push this repo to GitHub, then import it into Vercel.
+2. Set all required env vars in the Vercel project: `DATABASE_URL` (your Neon/Supabase connection string), `AUTH_SECRET`, `NEXTAUTH_URL` (your real domain).
 3. Run `npx prisma migrate deploy` (after converting local `db push` history to a real migration with `npx prisma migrate dev --name init` once, committed to the repo) as part of your deploy step.
 4. Configure real providers for storage (S3/R2), email (Resend/SES), maps (Google/Mapbox), and — before accepting real listings — decide on an identity-verification provider and a payment processor for marketplace fees only.
-5. Point `NEXTAUTH_URL`/`AUTH_SECRET` at your production domain and a freshly generated secret.
+5. Point your purchased domain at the Vercel project (Vercel's project settings give you the exact DNS records to add at your registrar).
 
 ## What remains to connect/configure before production
 
-- **PostgreSQL** — currently SQLite locally; see the callout above for the two-step switch.
-- **Object storage** — currently local disk; implement `S3StorageProvider` in `src/lib/storage.ts`.
+- **Object storage** — currently local disk; implement `S3StorageProvider` in `src/lib/storage.ts`. Local disk storage does not persist on serverless hosts like Vercel, so this needs to happen before real users upload listing photos in production.
 - **Maps/geocoding** — currently a deterministic demo geocoder; implement the Google/Mapbox branch in `src/lib/geo.ts` and consider adding an interactive map to listing/meetup pages.
 - **Email delivery** — currently logs to console; implement a provider in `src/lib/mailer.ts`.
 - **Phone verification** — currently a clearly-labeled `(Demo)` stub (`verifyPhoneDemoAction` in `src/server/actions/auth.ts`) that accepts any number with no real OTP. Wire up a real SMS/OTP provider (e.g. Twilio Verify) before relying on "Verified User" status in production.

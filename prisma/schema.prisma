@@ -1,20 +1,21 @@
 // BikeFair — Prisma schema
-// NOTE ON DATABASE PROVIDER: The spec calls for PostgreSQL, and this schema is written to be
-// Postgres-compatible (no SQLite-only features are used). This environment has no Docker/Postgres
-// server available, so local dev defaults to SQLite (zero-config, file-based) via DATABASE_URL in
-// .env. To run on Postgres, change `provider` below to "postgresql" and point DATABASE_URL at a
-// real instance (a docker-compose.yml is included for this). See README for the exact steps.
+// Runs on PostgreSQL. Point DATABASE_URL (in .env) at a hosted instance — Neon and Supabase both
+// have a free tier that works fine here. This schema was originally developed against SQLite for
+// local-only iteration (no Postgres server was available in that environment) and deliberately
+// avoids any SQLite- or Postgres-specific features, so it moved over with a one-line provider
+// change and no schema edits.
 //
 // Enums are intentionally modeled as `String` (validated in application code against the TS union
-// types in src/lib/constants.ts) rather than Prisma `enum` types, because Prisma enums are not
-// supported on SQLite — this keeps the same schema working unmodified on both providers.
+// types in src/lib/constants.ts) rather than Prisma `enum` types — a holdover from that SQLite
+// period (Prisma enums aren't supported there) that's kept because it costs nothing on Postgres
+// either and avoids an enum migration if a provider switch is ever needed again.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
