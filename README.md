@@ -27,7 +27,7 @@ A marketplace built specifically for buying and selling **used bicycles** locall
 | Database ORM | Prisma | Clean, typed schema. |
 | Database | **PostgreSQL** | Point `DATABASE_URL` at any Postgres instance — a free [Neon](https://neon.com) or [Supabase](https://supabase.com) project works fine, no server to manage. |
 | Auth | NextAuth (Auth.js) v5, credentials + JWT sessions | Reputable, well-supported auth library; JWT strategy avoids needing the full adapter schema for an email/password-only MVP. |
-| Image storage | Local disk (`public/uploads`) behind a `StorageProvider` interface | Zero-config for local dev; swap in S3/R2 by implementing `S3StorageProvider` in `src/lib/storage.ts` (env vars already scaffolded). |
+| Image storage | Vercel Blob in production, local disk (`public/uploads`) in dev, behind a `StorageProvider` interface | `getStorageProvider()` picks Vercel Blob automatically once `BLOB_READ_WRITE_TOKEN` is set (Vercel injects it when a Blob store is attached), else falls back to local disk. S3/R2 also supported by implementing `S3StorageProvider` in `src/lib/storage.ts`. |
 | Maps/geocoding | Deterministic demo geocoder behind a `geocode()` function | No Google Maps/Mapbox key is configured; swap in a real provider in `src/lib/geo.ts` without touching any caller. |
 | Email | Console-logged "dev mailer" behind `sendMail()` | No email provider configured; verification links print to the terminal running `npm run dev`. Swap in Resend/SES/etc. in `src/lib/mailer.ts`. |
 | Payments | Not implemented (by design) | The spec explicitly excludes bicycle-purchase payment processing from the MVP. A `PaymentRecord` table and fee engine exist for **marketplace fees only**, with a clean seam to add a real processor (e.g. Stripe) later. |
@@ -117,7 +117,8 @@ See `.env.example` for the full annotated list. The essentials to get running lo
 | `NEXTAUTH_URL` | Yes | `http://localhost:3000` for local dev. |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | No | Used by `prisma/seed.ts` to create the admin account; defaults shown below if unset. |
 | `NEXT_PUBLIC_BRAND_NAME` | No | Defaults to "BikeFair". |
-| `STORAGE_PROVIDER`, `S3_*` | No | Leave unset to use local-disk image storage. Set `STORAGE_PROVIDER=s3` and implement `S3StorageProvider` (see `src/lib/storage.ts`) to go live on object storage. |
+| `BLOB_READ_WRITE_TOKEN` | Production only | Set automatically by Vercel once a Blob store is attached to the project (Storage -> Create Database -> Blob). Leave unset locally to use local-disk image storage. |
+| `STORAGE_PROVIDER`, `S3_*` | No | Alternative to Vercel Blob. Set `STORAGE_PROVIDER=s3` and implement `S3StorageProvider` (see `src/lib/storage.ts`) to go live on S3-compatible storage instead. |
 | `MAPS_PROVIDER`, `GOOGLE_MAPS_API_KEY` | No | Leave unset to use the deterministic demo geocoder. |
 | `EMAIL_PROVIDER`, `RESEND_API_KEY`, `EMAIL_FROM` | No | Leave unset to log "sent" emails to the server console. |
 
@@ -161,12 +162,12 @@ npm run db:studio     # Prisma Studio — browse/edit the database visually
 1. Push this repo to GitHub, then import it into Vercel.
 2. Set all required env vars in the Vercel project: `DATABASE_URL` (your Neon/Supabase connection string), `AUTH_SECRET`, `NEXTAUTH_URL` (your real domain).
 3. Run `npx prisma migrate deploy` (after converting local `db push` history to a real migration with `npx prisma migrate dev --name init` once, committed to the repo) as part of your deploy step.
-4. Configure real providers for storage (S3/R2), email (Resend/SES), maps (Google/Mapbox), and — before accepting real listings — decide on an identity-verification provider and a payment processor for marketplace fees only.
+4. Attach a Blob store to the Vercel project (Storage -> Create Database -> Blob) so listing photos persist — Vercel sets `BLOB_READ_WRITE_TOKEN` automatically. Also configure real providers for email (Resend/SES), maps (Google/Mapbox), and — before accepting real listings — decide on an identity-verification provider and a payment processor for marketplace fees only.
 5. Point your purchased domain at the Vercel project (Vercel's project settings give you the exact DNS records to add at your registrar).
 
 ## What remains to connect/configure before production
 
-- **Object storage** — currently local disk; implement `S3StorageProvider` in `src/lib/storage.ts`. Local disk storage does not persist on serverless hosts like Vercel, so this needs to happen before real users upload listing photos in production.
+- **Object storage** — solved via Vercel Blob (`src/lib/storage.ts`, `VercelBlobStorageProvider`); just attach a Blob store to the Vercel project before launch (see Deployment above) so `BLOB_READ_WRITE_TOKEN` is set. Falls back to local disk (dev-only — doesn't persist on Vercel) when that token is absent.
 - **Maps/geocoding** — currently a deterministic demo geocoder; implement the Google/Mapbox branch in `src/lib/geo.ts` and consider adding an interactive map to listing/meetup pages.
 - **Email delivery** — currently logs to console; implement a provider in `src/lib/mailer.ts`.
 - **Phone verification** — currently a clearly-labeled `(Demo)` stub (`verifyPhoneDemoAction` in `src/server/actions/auth.ts`) that accepts any number with no real OTP. Wire up a real SMS/OTP provider (e.g. Twilio Verify) before relying on "Verified User" status in production.
