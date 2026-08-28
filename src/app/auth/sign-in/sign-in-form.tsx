@@ -41,9 +41,6 @@ export function SignInForm() {
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? "Signing in…" : "Sign In"}
       </Button>
-      <p className="rounded-lg bg-charcoal-50 p-3 text-xs text-charcoal-500">
-        Demo admin: admin@bikefair.demo / Admin123! · Demo seller: sarah@bikefair.demo / Demo1234!
-      </p>
     </form>
   );
 }
