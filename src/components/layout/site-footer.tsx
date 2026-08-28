@@ -65,7 +65,7 @@ export function SiteFooter() {
             and does not provide insurance, identity verification, law enforcement services, or professional inspections unless explicitly stated as a completed,
             configured integration. Participating meetup locations, including bike shops, are not parties to any transaction.
           </p>
-          <p className="mt-3">© {new Date().getFullYear()} {BRAND_NAME}. Demo application — placeholder brand name.</p>
+          <p className="mt-3">© {new Date().getFullYear()} James Silver EP, DBA {BRAND_NAME}. All rights reserved.</p>
         </div>
       </div>
     </footer>
