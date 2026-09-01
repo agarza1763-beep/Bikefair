@@ -68,8 +68,8 @@ export default function ValueGuidePage() {
       </div>
 
       <div className="mt-12 text-center">
-        <LinkButton href="/sell/create" variant="accent" size="lg">
-          Get Your Bike's Estimated Value
+        <LinkButton href="/check-value" variant="accent" size="lg">
+          Check Your Bike's Value
         </LinkButton>
       </div>
     </div>

@@ -7,7 +7,7 @@ import { listingWizardSchema, type ListingWizardInput } from "@/lib/validation";
 import { getValuationEngine } from "@/lib/valuation/engine";
 import type { ValuationInput } from "@/lib/valuation/types";
 import { geocode } from "@/lib/geo";
-import { dollarsInputToCents } from "@/lib/constants";
+import { dollarsInputToCents, type BikeCategory, type Condition, type FrameMaterial, type MileageLevel, type US_STATES } from "@/lib/constants";
 import type { ActionResult } from "./auth";
 
 function toValuationInput(input: ListingWizardInput): ValuationInput {
@@ -36,6 +36,43 @@ export async function previewValuationAction(partial: Partial<ListingWizardInput
   }
   const engine = getValuationEngine();
   const result = await engine.estimate(toValuationInput(partial as ListingWizardInput));
+  return { ok: true as const, data: result };
+}
+
+export interface StandaloneValuationInput {
+  category: BikeCategory;
+  brand: string;
+  model?: string;
+  year: number;
+  frameMaterial: FrameMaterial;
+  groupset?: string;
+  wheelset?: string;
+  wheelsUpgraded?: boolean;
+  condition: Condition;
+  mileageLevel?: MileageLevel;
+  originalMsrp?: string;
+  state?: (typeof US_STATES)[number];
+}
+
+/** Used by the standalone "Check Your Bike's Value" tool — no listing, no asking price, no sign-in required. */
+export async function previewStandaloneValuationAction(input: StandaloneValuationInput) {
+  const engine = getValuationEngine();
+  const result = await engine.estimate({
+    category: input.category,
+    brand: input.brand,
+    model: input.model || "",
+    year: input.year,
+    frameMaterial: input.frameMaterial,
+    groupset: input.groupset || null,
+    wheelset: input.wheelset || null,
+    wheelsUpgraded: !!input.wheelsUpgraded,
+    condition: input.condition,
+    mileageLevel: input.mileageLevel ?? null,
+    originalMsrpCents: input.originalMsrp ? dollarsInputToCents(input.originalMsrp) : null,
+    upgrades: null,
+    state: input.state,
+    askingPriceCents: 0,
+  });
   return { ok: true as const, data: result };
 }
 

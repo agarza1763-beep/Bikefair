@@ -13,7 +13,7 @@ const NAV_LINKS = [
   { href: "/browse", label: "Buy Bikes" },
   { href: "/sell", label: "Sell a Bike" },
   { href: "/how-it-works", label: "How It Works" },
-  { href: "/value-guide", label: "Fair Value Guide" },
+  { href: "/check-value", label: "Check Your Bike's Value" },
   { href: "/safety", label: "Safety" },
   { href: "/bike-shops", label: "Bike Shops" },
 ];
