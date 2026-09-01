@@ -2,16 +2,22 @@
 
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { signUpSchema } from "@/lib/validation";
 import { sendMail } from "@/lib/mailer";
 import { geocode } from "@/lib/geo";
 import { BRAND_NAME } from "@/lib/constants";
 import { requireUser } from "@/lib/session";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export type ActionResult<T = undefined> = { ok: true; data?: T } | { ok: false; error: string };
 
 export async function signUpAction(input: unknown): Promise<ActionResult<{ email: string }>> {
+  const ip = getClientIp(await headers());
+  const rateLimit = checkRateLimit(`sign-up:${ip}`, { limit: 5, windowMs: 60 * 60 * 1000 });
+  if (!rateLimit.ok) return { ok: false, error: rateLimit.error };
+
   const parsed = signUpSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };

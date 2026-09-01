@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
@@ -15,10 +16,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      authorize: async (credentials) => {
+      authorize: async (credentials, request) => {
         const email = (credentials?.email as string | undefined)?.trim().toLowerCase();
         const password = credentials?.password as string | undefined;
         if (!email || !password) return null;
+
+        const ip = getClientIp(request.headers);
+        const ipLimit = checkRateLimit(`sign-in-ip:${ip}`, { limit: 15, windowMs: 15 * 60 * 1000 });
+        const emailLimit = checkRateLimit(`sign-in-email:${email}`, { limit: 5, windowMs: 15 * 60 * 1000 });
+        if (!ipLimit.ok || !emailLimit.ok) return null;
 
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user || user.isSuspended) return null;

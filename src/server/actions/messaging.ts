@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { messageSchema } from "@/lib/validation";
+import { checkRateLimit } from "@/lib/rate-limit";
 import type { ActionResult } from "./auth";
 
 async function assertNotBlocked(userAId: string, userBId: string) {
@@ -21,6 +22,9 @@ async function assertNotBlocked(userAId: string, userBId: string) {
 export async function startConversationAction(listingId: string, body: string): Promise<ActionResult<{ conversationId: string }>> {
   try {
     const user = await requireUser();
+    const rateLimit = checkRateLimit(`message:${user.id}`, { limit: 30, windowMs: 10 * 60 * 1000 });
+    if (!rateLimit.ok) return { ok: false, error: rateLimit.error };
+
     const parsed = messageSchema.safeParse({ body });
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid message." };
 
@@ -49,6 +53,9 @@ export async function startConversationAction(listingId: string, body: string): 
 export async function sendMessageAction(conversationId: string, body: string, isQuickMessage = false): Promise<ActionResult> {
   try {
     const user = await requireUser();
+    const rateLimit = checkRateLimit(`message:${user.id}`, { limit: 30, windowMs: 10 * 60 * 1000 });
+    if (!rateLimit.ok) return { ok: false, error: rateLimit.error };
+
     const parsed = messageSchema.safeParse({ body });
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid message." };
 
