@@ -7,7 +7,8 @@ import { X, Loader2, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FairPriceBadge } from "@/components/bike/fair-price-badge";
 import { ValuationBreakdown } from "@/components/bike/valuation-breakdown";
-import { createListingAction, previewValuationAction, uploadImageAction } from "@/server/actions/listings";
+import { upload } from "@vercel/blob/client";
+import { createListingAction, previewValuationAction } from "@/server/actions/listings";
 import type { ValuationResult } from "@/lib/valuation/types";
 import {
   BIKE_CATEGORIES,
@@ -136,13 +137,13 @@ export function SellWizard() {
     if (!files || files.length === 0) return;
     setUploading(true);
     setError(null);
-    for (const file of Array.from(files)) {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await uploadImageAction(fd);
-      if (res.ok) set("images", [...form.images, res.data!.url]);
-      else setError(res.error);
-    }
+    const results = await Promise.allSettled(
+      Array.from(files).map((file) => upload(file.name, file, { access: "public", handleUploadUrl: "/api/blob/upload-photo" }))
+    );
+    const uploaded = results.filter((r) => r.status === "fulfilled").map((r) => (r as PromiseFulfilledResult<{ url: string }>).value.url);
+    const failed = results.find((r) => r.status === "rejected") as PromiseRejectedResult | undefined;
+    if (uploaded.length > 0) setForm((f) => ({ ...f, images: [...f.images, ...uploaded] }));
+    if (failed) setError(failed.reason instanceof Error ? failed.reason.message : "One or more photos failed to upload.");
     setUploading(false);
   }
 

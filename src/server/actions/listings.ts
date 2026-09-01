@@ -6,7 +6,6 @@ import { requireUser } from "@/lib/session";
 import { listingWizardSchema, type ListingWizardInput } from "@/lib/validation";
 import { getValuationEngine } from "@/lib/valuation/engine";
 import type { ValuationInput } from "@/lib/valuation/types";
-import { getStorageProvider, validateImageUpload } from "@/lib/storage";
 import { geocode } from "@/lib/geo";
 import { dollarsInputToCents } from "@/lib/constants";
 import type { ActionResult } from "./auth";
@@ -38,21 +37,6 @@ export async function previewValuationAction(partial: Partial<ListingWizardInput
   const engine = getValuationEngine();
   const result = await engine.estimate(toValuationInput(partial as ListingWizardInput));
   return { ok: true as const, data: result };
-}
-
-export async function uploadImageAction(formData: FormData): Promise<ActionResult<{ url: string }>> {
-  try {
-    await requireUser();
-    const file = formData.get("file") as File | null;
-    if (!file) return { ok: false, error: "No file provided." };
-
-    validateImageUpload({ size: file.size, mimeType: file.type });
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const url = await getStorageProvider().save({ buffer, filename: file.name, mimeType: file.type });
-    return { ok: true, data: { url } };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Upload failed." };
-  }
 }
 
 export async function createListingAction(input: ListingWizardInput): Promise<ActionResult<{ id: string }>> {

@@ -27,7 +27,7 @@ A marketplace built specifically for buying and selling **used bicycles** locall
 | Database ORM | Prisma | Clean, typed schema. |
 | Database | **PostgreSQL** | Point `DATABASE_URL` at any Postgres instance — a free [Neon](https://neon.com) or [Supabase](https://supabase.com) project works fine, no server to manage. |
 | Auth | NextAuth (Auth.js) v5, credentials + JWT sessions | Reputable, well-supported auth library; JWT strategy avoids needing the full adapter schema for an email/password-only MVP. |
-| Image storage | Vercel Blob in production, local disk (`public/uploads`) in dev, behind a `StorageProvider` interface | `getStorageProvider()` picks Vercel Blob automatically once `BLOB_READ_WRITE_TOKEN` is set (Vercel injects it when a Blob store is attached), else falls back to local disk. S3/R2 also supported by implementing `S3StorageProvider` in `src/lib/storage.ts`. |
+| Image storage | Vercel Blob, uploaded directly from the browser | The client uploads straight to Blob storage via `@vercel/blob/client`'s `upload()`, authorized by a short-lived token issued from `src/app/api/blob/upload-photo/route.ts`. This bypasses the server entirely for the file bytes — required because Next.js Server Actions cap request bodies at 1MB by default, far below real photo sizes. |
 | Maps/geocoding | Deterministic demo geocoder behind a `geocode()` function | No Google Maps/Mapbox key is configured; swap in a real provider in `src/lib/geo.ts` without touching any caller. |
 | Email | Console-logged "dev mailer" behind `sendMail()` | No email provider configured; verification links print to the terminal running `npm run dev`. Swap in Resend/SES/etc. in `src/lib/mailer.ts`. |
 | Payments | Not implemented (by design) | The spec explicitly excludes bicycle-purchase payment processing from the MVP. A `PaymentRecord` table and fee engine exist for **marketplace fees only**, with a clean seam to add a real processor (e.g. Stripe) later. |
@@ -53,7 +53,7 @@ src/
   components/           # UI (bike cards, valuation breakdown, layout, etc.)
   lib/
     valuation/           # The Fair Value engine — engine.ts, rules.ts, types.ts
-    prisma.ts, session.ts, storage.ts, geo.ts, mailer.ts, fees.ts, validation.ts, constants.ts
+    prisma.ts, session.ts, geo.ts, mailer.ts, fees.ts, validation.ts, constants.ts
   server/
     actions/             # "use server" mutations (auth, listings, messaging, offers, meetups, transactions, reviews, reports, saved, admin)
     queries/              # Read helpers shared across pages
@@ -117,8 +117,7 @@ See `.env.example` for the full annotated list. The essentials to get running lo
 | `NEXTAUTH_URL` | Yes | `http://localhost:3000` for local dev. |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | No | Used by `prisma/seed.ts` to create the admin account; defaults shown below if unset. |
 | `NEXT_PUBLIC_BRAND_NAME` | No | Defaults to "BikeFair". |
-| `BLOB_READ_WRITE_TOKEN` | Production only | Set automatically by Vercel once a Blob store is attached to the project (Storage -> Create Database -> Blob). Leave unset locally to use local-disk image storage. |
-| `STORAGE_PROVIDER`, `S3_*` | No | Alternative to Vercel Blob. Set `STORAGE_PROVIDER=s3` and implement `S3StorageProvider` (see `src/lib/storage.ts`) to go live on S3-compatible storage instead. |
+| `BLOB_READ_WRITE_TOKEN` | Yes | Required for photo uploads (local dev and production alike). Set automatically by Vercel once a Blob store is attached to the project (Storage -> Create Database -> Blob); for local dev, copy the same value into `.env`. |
 | `MAPS_PROVIDER`, `GOOGLE_MAPS_API_KEY` | No | Leave unset to use the deterministic demo geocoder. |
 | `EMAIL_PROVIDER`, `RESEND_API_KEY`, `EMAIL_FROM` | No | Leave unset to log "sent" emails to the server console. |
 
@@ -167,7 +166,7 @@ npm run db:studio     # Prisma Studio — browse/edit the database visually
 
 ## What remains to connect/configure before production
 
-- **Object storage** — solved via Vercel Blob (`src/lib/storage.ts`, `VercelBlobStorageProvider`); just attach a Blob store to the Vercel project before launch (see Deployment above) so `BLOB_READ_WRITE_TOKEN` is set. Falls back to local disk (dev-only — doesn't persist on Vercel) when that token is absent.
+- **Object storage** — solved via direct-to-Blob client uploads (`src/app/api/blob/upload-photo/route.ts`); just attach a Blob store to the Vercel project before launch (see Deployment above) so `BLOB_READ_WRITE_TOKEN` is set. Required in local dev too, since there's no local-disk fallback.
 - **Maps/geocoding** — currently a deterministic demo geocoder; implement the Google/Mapbox branch in `src/lib/geo.ts` and consider adding an interactive map to listing/meetup pages.
 - **Email delivery** — currently logs to console; implement a provider in `src/lib/mailer.ts`.
 - **Phone verification** — currently a clearly-labeled `(Demo)` stub (`verifyPhoneDemoAction` in `src/server/actions/auth.ts`) that accepts any number with no real OTP. Wire up a real SMS/OTP provider (e.g. Twilio Verify) before relying on "Verified User" status in production.
