@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Button, LinkButton } from "@/components/ui/button";
 import { markListingSoldAction, removeListingAction } from "@/server/actions/listings";
 
 export function ListingRowActions({ listingId, status }: { listingId: string; status: string }) {
@@ -11,6 +11,11 @@ export function ListingRowActions({ listingId, status }: { listingId: string; st
 
   return (
     <div className="flex shrink-0 gap-2">
+      {status !== "REMOVED" && (
+        <LinkButton size="sm" variant="outline" href={`/account/listings/${listingId}/edit`}>
+          Edit
+        </LinkButton>
+      )}
       {status === "ACTIVE" && (
         <Button
           size="sm"

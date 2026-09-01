@@ -173,28 +173,66 @@ export async function removeListingAction(listingId: string): Promise<ActionResu
   return { ok: true };
 }
 
-export async function updateAskingPriceAction(listingId: string, askingPrice: number): Promise<ActionResult> {
+export interface UpdateListingDetailsInput {
+  groupset?: string;
+  brakeType?: string;
+  suspension?: string;
+  wheelset?: string;
+  wheelsUpgraded?: boolean;
+  wheelSize?: string;
+  condition: Condition;
+  mileageLevel?: MileageLevel;
+  description: string;
+  upgrades?: string;
+  askingPrice: number;
+  originalMsrp?: number;
+  status: "ACTIVE" | "SOLD";
+}
+
+/** Powers the seller-facing Edit Listing page — components, price, and sold status, in one save. */
+export async function updateListingDetailsAction(listingId: string, input: UpdateListingDetailsInput): Promise<ActionResult> {
   const user = await requireUser();
   const listing = await prisma.bikeListing.findUnique({ where: { id: listingId } });
   if (!listing || listing.sellerId !== user.id) return { ok: false, error: "Not authorized." };
+  if (listing.status === "REMOVED") return { ok: false, error: "This listing has been removed and can no longer be edited." };
 
-  const askingPriceCents = dollarsInputToCents(askingPrice);
-  await prisma.bikeListing.update({ where: { id: listingId }, data: { askingPrice: askingPriceCents } });
+  const askingPriceCents = dollarsInputToCents(input.askingPrice);
+  const originalMsrpCents = input.originalMsrp ? dollarsInputToCents(input.originalMsrp) : null;
+
+  const updated = await prisma.bikeListing.update({
+    where: { id: listingId },
+    data: {
+      groupset: input.groupset || null,
+      brakeType: input.brakeType || null,
+      suspension: input.suspension || null,
+      wheelset: input.wheelset || null,
+      wheelsUpgraded: !!input.wheelsUpgraded,
+      wheelSize: input.wheelSize || null,
+      condition: input.condition,
+      mileageLevel: input.mileageLevel || null,
+      description: input.description,
+      upgrades: input.upgrades || null,
+      askingPrice: askingPriceCents,
+      originalMsrp: originalMsrpCents,
+      status: input.status,
+      soldAt: input.status === "SOLD" ? (listing.soldAt ?? new Date()) : null,
+    },
+  });
 
   const engine = getValuationEngine();
   const result = await engine.estimate({
-    category: listing.category as ValuationInput["category"],
-    brand: listing.brand,
-    model: listing.model,
-    year: listing.year,
-    frameMaterial: listing.frameMaterial as ValuationInput["frameMaterial"],
-    groupset: listing.groupset,
-    wheelset: listing.wheelset,
-    wheelsUpgraded: listing.wheelsUpgraded,
-    condition: listing.condition as ValuationInput["condition"],
-    mileageLevel: listing.mileageLevel as ValuationInput["mileageLevel"],
-    originalMsrpCents: listing.originalMsrp,
-    state: listing.state,
+    category: updated.category as ValuationInput["category"],
+    brand: updated.brand,
+    model: updated.model,
+    year: updated.year,
+    frameMaterial: updated.frameMaterial as ValuationInput["frameMaterial"],
+    groupset: updated.groupset,
+    wheelset: updated.wheelset,
+    wheelsUpgraded: updated.wheelsUpgraded,
+    condition: updated.condition as ValuationInput["condition"],
+    mileageLevel: updated.mileageLevel as ValuationInput["mileageLevel"],
+    originalMsrpCents: updated.originalMsrp,
+    state: updated.state,
     askingPriceCents,
   });
 
@@ -214,6 +252,8 @@ export async function updateAskingPriceAction(listingId: string, askingPrice: nu
   });
 
   revalidatePath(`/bike/${listingId}`);
+  revalidatePath("/account/listings");
+  revalidatePath("/browse");
   return { ok: true };
 }
 
