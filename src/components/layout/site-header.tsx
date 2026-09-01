@@ -13,7 +13,7 @@ const NAV_LINKS = [
   { href: "/browse", label: "Buy Bikes" },
   { href: "/sell", label: "Sell a Bike" },
   { href: "/how-it-works", label: "How It Works" },
-  { href: "/check-value", label: "Check Your Bike's Value" },
+  { href: "/check-value", label: "Check Value" },
   { href: "/safety", label: "Safety" },
   { href: "/bike-shops", label: "Bike Shops" },
 ];
@@ -26,18 +26,18 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-charcoal-100 bg-cream/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-2 font-display text-xl font-extrabold text-charcoal-900">
+        <div className="flex min-w-0 items-center gap-5 xl:gap-8">
+          <Link href="/" className="flex shrink-0 items-center gap-2 font-display text-xl font-extrabold text-charcoal-900">
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-green-700 text-accent-500">🚲</span>
             {BRAND_NAME}
           </Link>
-          <nav className="hidden items-center gap-6 lg:flex">
+          <nav className="hidden items-center gap-4 lg:flex xl:gap-6">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={clsx(
-                  "text-sm font-medium transition-colors hover:text-green-700",
+                  "whitespace-nowrap text-sm font-medium transition-colors hover:text-green-700",
                   pathname?.startsWith(link.href) ? "text-green-700" : "text-charcoal-700"
                 )}
               >
@@ -47,7 +47,7 @@ export function SiteHeader() {
           </nav>
         </div>
 
-        <div className="hidden items-center gap-3 lg:flex">
+        <div className="hidden shrink-0 items-center gap-3 lg:flex">
           {status === "authenticated" && session?.user ? (
             <>
               <Link href="/messages" className="rounded-full p-2 text-charcoal-700 hover:bg-charcoal-50" aria-label="Messages">
