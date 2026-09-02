@@ -12,7 +12,8 @@ export const FEE_DEFAULTS: Record<FeeType, { name: string; amountCents: number; 
   PREMIUM_LISTING: { name: "Premium Listing Fee", amountCents: 1999, isPercentage: false, isActive: true, description: "Featured placement plus a highlighted card style and top-of-search boost." },
   SELLER_CLOSING: { name: "Seller Closing Fee", amountCents: 300, isPercentage: true, isActive: true, description: "Percentage of the agreed sale price, charged to the seller once a transaction is marked completed." },
   VALUATION_REPORT: { name: "Detailed Valuation Report", amountCents: 499, isPercentage: false, isActive: false, description: "Optional downloadable PDF valuation report with full comps detail." },
-  BIKE_SHOP_MEMBERSHIP: { name: "Bike Shop Partner Membership", amountCents: 2500, isPercentage: false, isActive: true, description: "Recurring monthly fee for a bike shop to be a participating BikeFair location — brings new cyclist foot traffic and lists the shop as a trusted community meetup spot." },
+  BIKE_SHOP_MEMBERSHIP: { name: "Bike Shop Partner Membership (Monthly)", amountCents: 2500, isPercentage: false, isActive: true, description: "Recurring monthly fee for a bike shop to be a participating BikeFair location — brings new cyclist foot traffic and lists the shop as a trusted community meetup spot." },
+  BIKE_SHOP_MEMBERSHIP_YEARLY: { name: "Bike Shop Partner Membership (Yearly)", amountCents: 25000, isPercentage: false, isActive: true, description: "Discounted annual rate for the same partner membership — equivalent to 2 months free versus paying monthly." },
 };
 
 export async function getFee(type: FeeType) {

@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/session";
 import { geocode } from "@/lib/geo";
 import { bikeShopSchema } from "@/lib/validation";
 import { getFee } from "@/lib/fees";
+import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { dollarsInputToCents, type FeeType } from "@/lib/constants";
 import type { ActionResult } from "./auth";
 
@@ -171,6 +172,12 @@ export async function approveBikeShopMembershipAction(bikeShopId: string): Promi
 
 export async function cancelBikeShopMembershipAction(bikeShopId: string): Promise<ActionResult> {
   const admin = await requireAdmin();
+  const shop = await prisma.bikeShop.findUnique({ where: { id: bikeShopId } });
+  if (shop?.stripeSubscriptionId && isStripeConfigured()) {
+    await getStripe()
+      .subscriptions.cancel(shop.stripeSubscriptionId)
+      .catch(() => {}); // already cancelled or otherwise gone — proceed with the local state change regardless
+  }
   await prisma.bikeShop.update({ where: { id: bikeShopId }, data: { membershipStatus: "CANCELLED", isVerified: false } });
   await logAdminAction(admin.id, "CANCEL_BIKE_SHOP_MEMBERSHIP", "BIKE_SHOP", bikeShopId);
   revalidatePath("/admin/bike-shops");

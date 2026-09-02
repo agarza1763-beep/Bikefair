@@ -3,9 +3,11 @@ import { CheckCircle2 } from "lucide-react";
 import { currentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { getFee } from "@/lib/fees";
+import { isStripeConfigured } from "@/lib/stripe";
 import { formatCents } from "@/lib/constants";
 import { LinkButton } from "@/components/ui/button";
 import { JoinForm } from "./join-form";
+import { MembershipCheckoutButtons } from "./membership-checkout-buttons";
 
 export const metadata = { title: "Become a Partner Shop — BikeFair" };
 
@@ -19,6 +21,8 @@ const BENEFITS = [
 export default async function JoinBikeShopPage() {
   const user = await currentUser();
   const fee = await getFee("BIKE_SHOP_MEMBERSHIP");
+  const yearlyFee = await getFee("BIKE_SHOP_MEMBERSHIP_YEARLY");
+  const stripeReady = isStripeConfigured();
 
   const existingShop = user ? await prisma.bikeShop.findUnique({ where: { ownerUserId: user.id } }) : null;
 
@@ -55,11 +59,23 @@ export default async function JoinBikeShopPage() {
         ) : existingShop ? (
           <div className="text-center">
             <p className="font-display text-lg font-bold text-charcoal-900">{existingShop.name}</p>
-            <p className="mt-2 text-sm text-charcoal-600">
-              {existingShop.membershipStatus === "PENDING" && "Your signup is in review. We'll follow up to confirm billing and activate your listing."}
-              {existingShop.membershipStatus === "ACTIVE" && "Your shop is an active partner location."}
-              {existingShop.membershipStatus === "CANCELLED" && "Your membership was cancelled. Contact us if you'd like to rejoin."}
-            </p>
+
+            {existingShop.membershipStatus === "PENDING" && stripeReady && (
+              <>
+                <p className="mt-2 text-sm text-charcoal-600">Choose a plan to activate your listing — billing starts immediately and you can cancel anytime.</p>
+                <MembershipCheckoutButtons bikeShopId={existingShop.id} monthlyCents={fee.isActive ? fee.amountCents : 2500} yearlyCents={yearlyFee.isActive ? yearlyFee.amountCents : 25000} />
+              </>
+            )}
+            {existingShop.membershipStatus === "PENDING" && !stripeReady && (
+              <p className="mt-2 text-sm text-charcoal-600">Your signup is in review. We'll follow up to confirm billing and activate your listing.</p>
+            )}
+            {existingShop.membershipStatus === "ACTIVE" && (
+              <p className="mt-2 text-sm text-charcoal-600">
+                Your shop is an active partner location{existingShop.membershipInterval ? ` (billed ${existingShop.membershipInterval === "YEAR" ? "yearly" : "monthly"})` : ""}.
+              </p>
+            )}
+            {existingShop.membershipStatus === "CANCELLED" && <p className="mt-2 text-sm text-charcoal-600">Your membership was cancelled. Contact us if you'd like to rejoin.</p>}
+
             <LinkButton href={`/bike-shops/${existingShop.id}`} variant="outline" className="mt-4">
               View Shop Page
             </LinkButton>
@@ -70,9 +86,10 @@ export default async function JoinBikeShopPage() {
       </div>
 
       <p className="mt-6 text-xs text-charcoal-400">
-        This is a demo application: submitting this form does not charge a real card. In production this would bill{" "}
-        {fee.isActive ? formatCents(fee.amountCents) : "$25"}/month automatically through a payment processor. For now, a signup request is sent for review, and our
-        team follows up to arrange billing and confirm your listing goes live. See our{" "}
+        {stripeReady
+          ? "Billing is handled securely through Stripe. You'll choose Monthly or Yearly and pay directly after your shop details are submitted."
+          : "Submitting this form does not charge a real card yet — a signup request is sent for review, and our team follows up to arrange billing and confirm your listing goes live."}{" "}
+        See our{" "}
         <Link href="/terms" className="underline">
           Terms
         </Link>{" "}

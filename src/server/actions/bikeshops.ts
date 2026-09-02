@@ -5,6 +5,9 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { geocode } from "@/lib/geo";
 import { bikeShopSchema } from "@/lib/validation";
+import { getFee } from "@/lib/fees";
+import { getStripe, isStripeConfigured } from "@/lib/stripe";
+import { BRAND_NAME } from "@/lib/constants";
 import type { ActionResult } from "./auth";
 
 /**
@@ -48,4 +51,53 @@ export async function submitBikeShopSignupAction(input: unknown): Promise<Action
 
   revalidatePath("/admin/bike-shops");
   return { ok: true, data: { id: shop.id } };
+}
+
+/**
+ * Creates a Stripe Checkout session for the shop's own owner to pay the recurring partner
+ * membership fee — monthly or a discounted yearly rate. Activation happens automatically via
+ * the Stripe webhook once payment succeeds (see /api/stripe/webhook), not here.
+ */
+export async function startBikeShopMembershipCheckoutAction(bikeShopId: string, interval: "MONTH" | "YEAR"): Promise<ActionResult<{ url: string }>> {
+  if (!isStripeConfigured()) return { ok: false, error: "Payments aren't configured yet — check back soon." };
+
+  const user = await requireUser();
+  const shop = await prisma.bikeShop.findUnique({ where: { id: bikeShopId } });
+  if (!shop || shop.ownerUserId !== user.id) return { ok: false, error: "Not authorized." };
+  if (shop.membershipStatus === "ACTIVE") return { ok: false, error: "This shop's membership is already active." };
+
+  const feeType = interval === "YEAR" ? "BIKE_SHOP_MEMBERSHIP_YEARLY" : "BIKE_SHOP_MEMBERSHIP";
+  const fee = await getFee(feeType);
+  const stripe = getStripe();
+  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+
+  let customerId = shop.stripeCustomerId ?? undefined;
+  if (!customerId) {
+    const customer = await stripe.customers.create({ email: user.email ?? undefined, name: shop.name, metadata: { bikeShopId } });
+    customerId = customer.id;
+    await prisma.bikeShop.update({ where: { id: bikeShopId }, data: { stripeCustomerId: customerId } });
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    mode: "subscription",
+    customer: customerId,
+    line_items: [
+      {
+        quantity: 1,
+        price_data: {
+          currency: "usd",
+          unit_amount: fee.amountCents,
+          recurring: { interval: interval === "YEAR" ? "year" : "month" },
+          product_data: { name: `${BRAND_NAME} Bike Shop Partner Membership (${interval === "YEAR" ? "Yearly" : "Monthly"})` },
+        },
+      },
+    ],
+    metadata: { bikeShopId, interval },
+    subscription_data: { metadata: { bikeShopId, interval } },
+    success_url: `${baseUrl}/bike-shops/join?checkout=success`,
+    cancel_url: `${baseUrl}/bike-shops/join?checkout=cancelled`,
+  });
+
+  if (!session.url) return { ok: false, error: "Could not start checkout. Please try again." };
+  return { ok: true, data: { url: session.url } };
 }

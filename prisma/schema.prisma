@@ -315,11 +315,15 @@ model BikeShop {
   isDemo           Boolean  @default(false)
   meetupCount      Int      @default(0)
 
-  // Paid partner membership ($/month, see Fee type BIKE_SHOP_MEMBERSHIP) — a shop that self-signs
-  // up via /bike-shops/join starts PENDING until an admin reviews and approves it; shops added
-  // directly by an admin (e.g. via /admin/bike-shops/new) default to ACTIVE with no review step.
+  // Paid partner membership (see Fee types BIKE_SHOP_MEMBERSHIP / BIKE_SHOP_MEMBERSHIP_YEARLY) — a
+  // shop that self-signs up via /bike-shops/join starts PENDING and becomes ACTIVE automatically
+  // once Stripe confirms payment (see /api/stripe/webhook). Shops added directly by an admin (e.g.
+  // via /admin/bike-shops/new) default to ACTIVE with no payment step.
   membershipStatus     String    @default("ACTIVE") // NONE | PENDING | ACTIVE | CANCELLED
   membershipApprovedAt DateTime?
+  membershipInterval   String? // MONTH | YEAR
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -457,6 +461,7 @@ model PaymentRecord {
   amountCents   Int
   status        String       @default("SUCCEEDED") // demo/stub payment provider — website fees only
   provider      String       @default("stub")
+  providerRef   String? // Stripe checkout session / invoice id, for idempotency and lookup
   createdAt     DateTime     @default(now())
 }
 

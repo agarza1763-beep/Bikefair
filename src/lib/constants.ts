@@ -142,7 +142,7 @@ export const REPORT_TYPE_LABELS: Record<ReportType, string> = {
 export const REPORT_STATUSES = ["OPEN", "IN_REVIEW", "RESOLVED", "DISMISSED"] as const;
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
 
-export const FEE_TYPES = ["LISTING", "FEATURED_LISTING", "PREMIUM_LISTING", "SELLER_CLOSING", "VALUATION_REPORT", "BIKE_SHOP_MEMBERSHIP"] as const;
+export const FEE_TYPES = ["LISTING", "FEATURED_LISTING", "PREMIUM_LISTING", "SELLER_CLOSING", "VALUATION_REPORT", "BIKE_SHOP_MEMBERSHIP", "BIKE_SHOP_MEMBERSHIP_YEARLY"] as const;
 export type FeeType = (typeof FEE_TYPES)[number];
 
 export const BIKE_SHOP_MEMBERSHIP_STATUSES = ["NONE", "PENDING", "ACTIVE", "CANCELLED"] as const;
