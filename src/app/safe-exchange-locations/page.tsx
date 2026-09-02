@@ -26,9 +26,10 @@ export default async function SafeExchangeLocationsPage({ searchParams }: { sear
     <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
       <h1 className="font-display text-3xl font-extrabold text-charcoal-900">Safe Exchange Locations</h1>
       <p className="mt-3 max-w-2xl text-charcoal-600">
-        These police departments, sheriff's offices, and other public agencies have agreed to serve as designated meetup spots for BikeFair transactions — often a
-        lobby or a monitored parking area. <strong>{BRAND_NAME} does not employ, dispatch, or pay these agencies, and they are not a party to any transaction.</strong>{" "}
-        See our{" "}
+        These police departments, sheriff's offices, and other public agencies run their own publicly-announced safe exchange programs — often a lobby or a
+        monitored parking area — which we've compiled here as a resource for BikeFair users. A listing here reflects a program the agency already offers the public;
+        it does not imply an agreement or partnership with {BRAND_NAME} unless separately noted.{" "}
+        <strong>{BRAND_NAME} does not employ, dispatch, or pay these agencies, and they are not a party to any transaction.</strong> See our{" "}
         <Link href="/safety" className="text-green-700 underline">
           Safety Center
         </Link>{" "}
