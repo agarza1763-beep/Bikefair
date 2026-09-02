@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BadgeCheck } from "lucide-react";
+import { BadgeCheck, TrendingUp } from "lucide-react";
 import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { VerifyPhoneButton } from "./verify-phone-button";
@@ -12,6 +12,7 @@ export default async function AccountPage() {
     where: { id: sessionUser.id },
     include: { verifications: true, listings: { where: { status: "ACTIVE" } }, reviewsReceived: true },
   });
+  const ownedShop = await prisma.bikeShop.findUnique({ where: { ownerUserId: user.id }, select: { name: true, membershipStatus: true } });
 
   const emailVerified = !!user.emailVerified;
   const phoneVerified = user.phoneVerified;
@@ -45,6 +46,24 @@ export default async function AccountPage() {
           <p className="text-sm text-charcoal-500">Reviews received</p>
         </Link>
       </div>
+
+      {ownedShop && (
+        <Link
+          href="/account/shop-dashboard"
+          className="mt-4 flex items-center gap-4 rounded-2xl border-2 border-dashed border-green-600 bg-green-50 p-5 transition-colors hover:bg-green-100"
+        >
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-700 text-white">
+            <TrendingUp className="h-6 w-6" />
+          </span>
+          <div className="flex-1">
+            <p className="font-display text-base font-bold text-green-900">{ownedShop.name}'s Shop Dashboard</p>
+            <p className="text-sm text-green-800">
+              {ownedShop.membershipStatus === "ACTIVE" ? "Local Market Pulse — partner-only trends for your city" : "Membership inactive — reactivate to unlock partner tools"}
+            </p>
+          </div>
+          <span className="shrink-0 rounded-full bg-green-700 px-4 py-2 text-sm font-semibold text-white">View →</span>
+        </Link>
+      )}
 
       <div className="mt-8 card p-6">
         <h2 className="font-display text-lg font-bold text-charcoal-900">Verification</h2>

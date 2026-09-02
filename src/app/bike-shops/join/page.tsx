@@ -16,6 +16,7 @@ const BENEFITS = [
   "Available as a designated safe meetup location for local buyers and sellers",
   "New foot traffic from cyclists you haven't met yet — a reason for them to walk into your shop",
   "Optional: offer a paid professional inspection/tune-up service to buyers meeting at your shop",
+  "Local Market Pulse dashboard — trending categories, brands, asking prices, and recent sale comps for your city, built from real BikeFair activity you can't get anywhere public",
 ];
 
 export default async function JoinBikeShopPage() {
@@ -76,9 +77,16 @@ export default async function JoinBikeShopPage() {
             )}
             {existingShop.membershipStatus === "CANCELLED" && <p className="mt-2 text-sm text-charcoal-600">Your membership was cancelled. Contact us if you'd like to rejoin.</p>}
 
-            <LinkButton href={`/bike-shops/${existingShop.id}`} variant="outline" className="mt-4">
-              View Shop Page
-            </LinkButton>
+            <div className="mt-4 flex flex-wrap justify-center gap-3">
+              <LinkButton href={`/bike-shops/${existingShop.id}`} variant="outline">
+                View Shop Page
+              </LinkButton>
+              {existingShop.membershipStatus === "ACTIVE" && (
+                <LinkButton href="/account/shop-dashboard" variant="primary">
+                  Open Shop Dashboard
+                </LinkButton>
+              )}
+            </div>
           </div>
         ) : (
           <JoinForm feeCents={fee.isActive ? fee.amountCents : 2500} />
