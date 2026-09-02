@@ -91,7 +91,7 @@ const initialState: WizardState = {
   meetupNotes: "",
 };
 
-export function SellWizard() {
+export function SellWizard({ isShopSeller = false }: { isShopSeller?: boolean }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<WizardState>(initialState);
@@ -325,7 +325,16 @@ export function SellWizard() {
           </StepShell>
         )}
 
-        {step === 8 && (
+        {step === 8 && isShopSeller && (
+          <StepShell title="Your Estimated Fair Value">
+            <p className="rounded-xl bg-charcoal-50 p-4 text-sm text-charcoal-600">
+              Fair value estimates aren't shown on new shop inventory — they're built for pricing used bikes by condition and wear, which doesn't apply to brand-new stock. Your listing will
+              show your asking price only.
+            </p>
+          </StepShell>
+        )}
+
+        {step === 8 && !isShopSeller && (
           <StepShell title="Your Estimated Fair Value">
             {!valuation ? (
               <div className="flex flex-col items-center py-8">

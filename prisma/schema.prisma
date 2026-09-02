@@ -68,6 +68,7 @@ model User {
   verifications         Verification[]
   adminActions          AdminAction[]
   emailTokens           EmailVerificationToken[]
+  passwordResetTokens   PasswordResetToken[]
   blocksInitiated       Block[]          @relation("BlockBlocker")
   blocksReceived        Block[]          @relation("BlockBlocked")
   paymentRecords        PaymentRecord[]
@@ -80,6 +81,16 @@ model EmailVerificationToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   token     String   @unique
   expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
   createdAt DateTime @default(now())
 }
 
@@ -153,6 +164,11 @@ model BikeListing {
   isPremium      Boolean  @default(false)
   isDemo         Boolean  @default(false)
   viewCount      Int      @default(0)
+
+  // True for new-inventory listings posted by a verified bike shop (see BikeShop). These are
+  // brand-new retail stock, not a used peer-to-peer sale, so the fair-value estimate — built for
+  // pricing used bikes by condition/depreciation — isn't shown on them.
+  isShopInventory Boolean @default(false)
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -322,6 +338,7 @@ model BikeShop {
   membershipStatus     String    @default("ACTIVE") // NONE | PENDING | ACTIVE | CANCELLED
   membershipApprovedAt DateTime?
   membershipInterval   String? // MONTH | YEAR
+  membershipExpiresAt  DateTime? // for memberships paid outside Stripe (e.g. offline/manually) — Stripe-billed memberships don't need this, since the subscription itself tracks renewal
   stripeCustomerId     String?
   stripeSubscriptionId String?
 

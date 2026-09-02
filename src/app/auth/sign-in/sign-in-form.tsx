@@ -34,7 +34,12 @@ export function SignInForm() {
         <input className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
       </div>
       <div>
-        <label className="label">Password</label>
+        <div className="flex items-center justify-between">
+          <label className="label mb-0">Password</label>
+          <a href="/auth/forgot-password" className="text-xs font-medium text-green-700 hover:underline">
+            Forgot password?
+          </a>
+        </div>
         <input className="input" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
       </div>
       {error && <p className="text-sm text-red-500">{error}</p>}

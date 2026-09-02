@@ -23,6 +23,7 @@ export interface BikeCardData {
   estimatedHighCents?: number | null;
   pricePositionLabel?: PricePositionLabel | null;
   isRecognizedBrand?: boolean;
+  isShopInventory?: boolean;
 }
 
 export function BikeCard({ bike }: { bike: BikeCardData }) {
@@ -59,14 +60,19 @@ export function BikeCard({ bike }: { bike: BikeCardData }) {
           <span className="font-display text-xl font-extrabold text-charcoal-900">{formatCents(bike.askingPrice)}</span>
         </div>
 
-        {bike.estimatedLowCents != null && bike.estimatedHighCents != null && (
-          <p className="text-xs text-charcoal-500">
-            Estimated Fair Value: {formatCents(bike.estimatedLowCents)}–{formatCents(bike.estimatedHighCents)}
-          </p>
+        {bike.isShopInventory ? (
+          <p className="text-xs font-medium uppercase tracking-wide text-green-700">New shop inventory</p>
+        ) : (
+          bike.estimatedLowCents != null &&
+          bike.estimatedHighCents != null && (
+            <p className="text-xs text-charcoal-500">
+              Estimated Fair Value: {formatCents(bike.estimatedLowCents)}–{formatCents(bike.estimatedHighCents)}
+            </p>
+          )
         )}
 
         <div className="flex flex-wrap gap-1.5">
-          {bike.pricePositionLabel && <FairPriceBadge label={bike.pricePositionLabel} className="w-fit" />}
+          {!bike.isShopInventory && bike.pricePositionLabel && <FairPriceBadge label={bike.pricePositionLabel} className="w-fit" />}
           {bike.isRecognizedBrand === false && <UnrecognizedBrandBadge isEbike={bike.category === "EBIKE"} compact />}
         </div>
 

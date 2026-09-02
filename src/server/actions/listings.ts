@@ -85,10 +85,13 @@ export async function createListingAction(input: ListingWizardInput): Promise<Ac
   const point = await geocode(data.city, data.state);
   const askingPriceCents = dollarsInputToCents(data.askingPrice);
   const originalMsrpCents = data.originalMsrp ? dollarsInputToCents(data.originalMsrp) : null;
+  const ownedShop = await prisma.bikeShop.findUnique({ where: { ownerUserId: user.id }, select: { isVerified: true } });
+  const isShopInventory = !!ownedShop?.isVerified;
 
   const listing = await prisma.bikeListing.create({
     data: {
       sellerId: user.id,
+      isShopInventory,
       title: `${data.year} ${data.brand} ${data.model}`,
       category: data.category,
       brand: data.brand,

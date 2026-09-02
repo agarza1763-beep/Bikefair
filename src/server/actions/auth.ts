@@ -10,19 +10,35 @@ import { geocode } from "@/lib/geo";
 import { BRAND_NAME } from "@/lib/constants";
 import { requireUser } from "@/lib/session";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { isDisposableEmail } from "@/lib/disposable-email";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 export type ActionResult<T = undefined> = { ok: true; data?: T } | { ok: false; error: string };
 
-export async function signUpAction(input: unknown): Promise<ActionResult<{ email: string }>> {
+/**
+ * `website` is a honeypot: a field hidden from real users via CSS but visible to unsophisticated
+ * bots that auto-fill every input. Any value there means it wasn't a human — reject silently with
+ * a generic-looking success-shaped error so the bot doesn't learn its trick was caught.
+ */
+export async function signUpAction(input: unknown, honeypot?: string, turnstileToken?: string): Promise<ActionResult<{ email: string }>> {
+  if (honeypot) return { ok: false, error: "Something went wrong. Please try again." };
+
   const ip = getClientIp(await headers());
   const rateLimit = checkRateLimit(`sign-up:${ip}`, { limit: 5, windowMs: 60 * 60 * 1000 });
   if (!rateLimit.ok) return { ok: false, error: rateLimit.error };
+
+  const turnstileOk = await verifyTurnstileToken(turnstileToken);
+  if (!turnstileOk) return { ok: false, error: "Verification failed. Please try again." };
 
   const parsed = signUpSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
   const { name, email, password, city, state } = parsed.data;
+
+  if (isDisposableEmail(email)) {
+    return { ok: false, error: "Please use a permanent email address — temporary/disposable email providers aren't supported." };
+  }
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -49,6 +65,48 @@ export async function signUpAction(input: unknown): Promise<ActionResult<{ email
   });
 
   return { ok: true, data: { email } };
+}
+
+/** Always returns ok:true regardless of whether the email exists, so a sign-up screen can't be used to enumerate accounts. */
+export async function requestPasswordResetAction(email: string): Promise<ActionResult> {
+  const ip = getClientIp(await headers());
+  const rateLimit = checkRateLimit(`password-reset:${ip}`, { limit: 5, windowMs: 60 * 60 * 1000 });
+  if (!rateLimit.ok) return { ok: false, error: rateLimit.error };
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+
+  if (user) {
+    const token = randomBytes(24).toString("hex");
+    await prisma.passwordResetToken.create({
+      data: { userId: user.id, token, expiresAt: new Date(Date.now() + 1000 * 60 * 60) },
+    });
+    const resetUrl = `${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/auth/reset-password?token=${token}`;
+    await sendMail({
+      to: normalizedEmail,
+      subject: `Reset your ${BRAND_NAME} password`,
+      text: `We received a request to reset your ${BRAND_NAME} password. This link expires in 1 hour and can only be used once:\n\n${resetUrl}\n\nIf you didn't request this, you can safely ignore this email.`,
+    });
+  }
+
+  return { ok: true };
+}
+
+export async function resetPasswordAction(token: string, newPassword: string): Promise<ActionResult> {
+  if (newPassword.length < 8) return { ok: false, error: "Password must be at least 8 characters." };
+
+  const record = await prisma.passwordResetToken.findUnique({ where: { token } });
+  if (!record || record.usedAt || record.expiresAt < new Date()) {
+    return { ok: false, error: "This reset link is invalid or has expired. Request a new one." };
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+  await prisma.$transaction([
+    prisma.user.update({ where: { id: record.userId }, data: { passwordHash } }),
+    prisma.passwordResetToken.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
+  ]);
+
+  return { ok: true };
 }
 
 export async function verifyEmailAction(token: string): Promise<ActionResult> {

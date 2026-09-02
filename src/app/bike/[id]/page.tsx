@@ -112,7 +112,8 @@ export default async function BikeDetailPage({ params }: { params: Promise<{ id:
               {listing.frameSize} · {listing.city}, {listing.state}
             </p>
             <p className="mt-4 font-display text-3xl font-extrabold text-charcoal-900">{formatCents(listing.askingPrice)}</p>
-            {val && (
+            {listing.isShopInventory && <p className="mt-2 text-xs font-medium uppercase tracking-wide text-green-700">New shop inventory</p>}
+            {val && !listing.isShopInventory && (
               <div className="mt-2 flex items-center gap-2">
                 <FairPriceBadge label={val.pricePositionLabel as PricePositionLabel} />
                 <span className="text-xs text-charcoal-500">
@@ -132,7 +133,7 @@ export default async function BikeDetailPage({ params }: { params: Promise<{ id:
             </div>
           </div>
 
-          {val && breakdown.length > 0 && (
+          {val && breakdown.length > 0 && !listing.isShopInventory && (
             <ValuationBreakdown
               breakdown={breakdown}
               estimatedLowCents={val.estimatedLow}

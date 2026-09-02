@@ -26,6 +26,7 @@ export function toBikeCardData(
     images: { url: string }[];
     seller: { name: string; verificationLevel: string };
     valuations: { estimatedLow: number; estimatedHigh: number; pricePositionLabel: string }[];
+    isShopInventory?: boolean;
   },
   recognizedBrandNames: string[] = []
 ): BikeCardData {
@@ -48,6 +49,7 @@ export function toBikeCardData(
     estimatedHighCents: val?.estimatedHigh ?? null,
     pricePositionLabel: (val?.pricePositionLabel as PricePositionLabel) ?? null,
     isRecognizedBrand: recognizedBrandNames.length > 0 ? isRecognizedBrand(listing.brand, recognizedBrandNames) : undefined,
+    isShopInventory: listing.isShopInventory,
   };
 }
 
