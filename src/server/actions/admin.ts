@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/session";
 import { geocode } from "@/lib/geo";
-import { bikeShopSchema } from "@/lib/validation";
+import { bikeShopSchema, safeExchangeLocationSchema } from "@/lib/validation";
 import { getFee } from "@/lib/fees";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { dollarsInputToCents, type FeeType } from "@/lib/constants";
@@ -131,6 +131,48 @@ export async function linkBikeShopOwnerAction(bikeShopId: string, userId: string
   await prisma.bikeShop.update({ where: { id: bikeShopId }, data: { ownerUserId: userId } });
   await logAdminAction(admin.id, "LINK_BIKE_SHOP_OWNER", "BIKE_SHOP", bikeShopId, userId ?? "unlinked");
   revalidatePath("/admin/bike-shops");
+  return { ok: true };
+}
+
+export async function upsertSafeExchangeLocationAction(locationId: string | null, input: unknown): Promise<ActionResult<{ id: string }>> {
+  const admin = await requireAdmin();
+  const parsed = safeExchangeLocationSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid location details." };
+  const data = parsed.data;
+
+  const point = await geocode(data.city, data.state);
+  const locationData = {
+    name: data.name,
+    agencyType: data.agencyType,
+    address: data.address,
+    city: data.city,
+    state: data.state,
+    zip: data.zip || null,
+    lat: point.lat,
+    lng: point.lng,
+    phone: data.phone || null,
+    notes: data.notes || null,
+    isActive: data.isActive ?? true,
+  };
+
+  const location = locationId
+    ? await prisma.safeExchangeLocation.update({ where: { id: locationId }, data: locationData })
+    : await prisma.safeExchangeLocation.create({ data: locationData });
+
+  await logAdminAction(admin.id, locationId ? "UPDATE_SAFE_EXCHANGE_LOCATION" : "CREATE_SAFE_EXCHANGE_LOCATION", "SAFE_EXCHANGE_LOCATION", location.id, data.name);
+  revalidatePath("/admin/safe-exchange-locations");
+  revalidatePath("/safe-exchange-locations");
+  return { ok: true, data: { id: location.id } };
+}
+
+export async function deleteSafeExchangeLocationAction(locationId: string): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const location = await prisma.safeExchangeLocation.findUnique({ where: { id: locationId } });
+  if (!location) return { ok: false, error: "Location not found." };
+  await prisma.safeExchangeLocation.delete({ where: { id: locationId } });
+  await logAdminAction(admin.id, "DELETE_SAFE_EXCHANGE_LOCATION", "SAFE_EXCHANGE_LOCATION", locationId, location.name);
+  revalidatePath("/admin/safe-exchange-locations");
+  revalidatePath("/safe-exchange-locations");
   return { ok: true };
 }
 

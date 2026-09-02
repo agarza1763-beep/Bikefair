@@ -19,7 +19,7 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
       seller: { select: { id: true, name: true } },
       messages: { orderBy: { createdAt: "asc" }, include: { sender: { select: { name: true } } } },
       offers: { orderBy: { createdAt: "desc" } },
-      meetups: { orderBy: { createdAt: "desc" }, include: { bikeShop: true } },
+      meetups: { orderBy: { createdAt: "desc" }, include: { bikeShop: true, safeExchangeLocation: true } },
     },
   });
 
@@ -32,6 +32,10 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
   markConversationReadAction(id).catch(() => {});
 
   const bikeShops = await prisma.bikeShop.findMany({ where: { isVerified: true }, select: { id: true, name: true, city: true, state: true, offersInspection: true } });
+  const safeExchangeLocations = await prisma.safeExchangeLocation.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true, city: true, state: true },
+  });
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
@@ -61,9 +65,11 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
           status: m.status,
           scheduledAt: m.scheduledAt?.toISOString() ?? null,
           bikeShopName: m.bikeShop?.name ?? null,
+          safeExchangeLocationName: m.safeExchangeLocation?.name ?? null,
         }))}
         transaction={transaction ? { id: transaction.id, status: transaction.status, buyerConfirmed: !!transaction.buyerConfirmedAt, sellerConfirmed: !!transaction.sellerConfirmedAt } : null}
         bikeShops={bikeShops}
+        safeExchangeLocations={safeExchangeLocations}
         otherUserId={otherUser.id}
       />
     </div>

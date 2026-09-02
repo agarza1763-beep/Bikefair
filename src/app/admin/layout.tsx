@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/admin/serial-numbers", label: "Fraud / Safety" },
   { href: "/admin/transactions", label: "Transactions" },
   { href: "/admin/bike-shops", label: "Bike Shops" },
+  { href: "/admin/safe-exchange-locations", label: "Safe Exchange Locations" },
   { href: "/admin/recognized-brands", label: "Recognized Brands" },
   { href: "/admin/valuation-rules", label: "Valuation Rules" },
   { href: "/admin/fees", label: "Fees" },

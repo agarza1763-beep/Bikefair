@@ -289,6 +289,8 @@ model Meetup {
   type                String       // PUBLIC | BIKE_SHOP | LAW_ENFORCEMENT
   bikeShopId          String?
   bikeShop            BikeShop?    @relation(fields: [bikeShopId], references: [id])
+  safeExchangeLocationId String?
+  safeExchangeLocation   SafeExchangeLocation? @relation(fields: [safeExchangeLocationId], references: [id])
 
   locationName        String
   address             String?
@@ -347,6 +349,30 @@ model BikeShop {
 
   meetups          Meetup[]
   paymentRecords   PaymentRecord[]
+}
+
+// A free, unpaid designated meetup spot at a police department or sheriff's office — added by an
+// admin after outreach to the agency, not a self-signup like BikeShop. No membership/billing fields
+// on purpose: listing a government agency shouldn't look like a paid placement.
+model SafeExchangeLocation {
+  id          String   @id @default(cuid())
+  name        String // e.g. "Springfield Police Department"
+  agencyType  String   @default("POLICE") // POLICE | SHERIFF | OTHER
+  address     String
+  city        String
+  state       String
+  zip         String?
+  lat         Float?
+  lng         Float?
+  phone       String?
+  notes       String? // e.g. "Lobby, camera-covered. Ask the front desk for the exchange spot."
+  isActive    Boolean  @default(true)
+  meetupCount Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  meetups     Meetup[]
 }
 
 // ============================= TRANSACTIONS & REVIEWS =============================

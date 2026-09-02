@@ -111,6 +111,14 @@ export const MEETUP_TYPE_LABELS: Record<MeetupType, string> = {
 export const MEETUP_STATUSES = ["PROPOSED", "CONFIRMED", "COMPLETED", "CANCELLED"] as const;
 export type MeetupStatus = (typeof MEETUP_STATUSES)[number];
 
+export const AGENCY_TYPES = ["POLICE", "SHERIFF", "OTHER"] as const;
+export type AgencyType = (typeof AGENCY_TYPES)[number];
+export const AGENCY_TYPE_LABELS: Record<AgencyType, string> = {
+  POLICE: "Police Department",
+  SHERIFF: "Sheriff's Office",
+  OTHER: "Other Public Agency",
+};
+
 export const OFFER_STATUSES = ["PENDING", "ACCEPTED", "DECLINED", "WITHDRAWN"] as const;
 export type OfferStatus = (typeof OFFER_STATUSES)[number];
 

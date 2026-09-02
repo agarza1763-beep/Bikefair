@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ShieldCheck, MapPin, Landmark, Wrench, AlertTriangle, BatteryWarning } from "lucide-react";
 import { BRAND_NAME } from "@/lib/constants";
 
@@ -32,8 +33,11 @@ export default function SafetyPage() {
           <p>
             For higher-value transactions, some areas offer designated "safe exchange" locations — often at a police station lobby or a monitored parking area — as a
             community safety resource. <strong>Availability varies by location, and {BRAND_NAME} does not employ, dispatch, or pay police officers, and does not represent
-            any law enforcement agency as a business partner.</strong> Where we display this option, we're pointing you to a resource that may exist locally — verify
-            current availability and any rules directly with your local department before relying on it.
+            any law enforcement agency as a business partner.</strong> See our{" "}
+            <Link href="/safe-exchange-locations" className="text-green-700 underline">
+              list of participating agencies
+            </Link>{" "}
+            — verify current availability and any rules directly with your local department before relying on it.
           </p>
         </SafetySection>
 

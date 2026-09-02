@@ -23,6 +23,7 @@ export async function proposeMeetupAction(conversationId: string, input: unknown
       conversationId,
       type: data.type,
       bikeShopId: data.type === "BIKE_SHOP" ? data.bikeShopId || null : null,
+      safeExchangeLocationId: data.type === "LAW_ENFORCEMENT" ? data.safeExchangeLocationId || null : null,
       locationName: data.locationName,
       address: data.address || null,
       city: data.city || null,
@@ -35,6 +36,9 @@ export async function proposeMeetupAction(conversationId: string, input: unknown
 
   if (data.bikeShopId && data.type === "BIKE_SHOP") {
     await prisma.bikeShop.update({ where: { id: data.bikeShopId }, data: { meetupCount: { increment: 1 } } });
+  }
+  if (data.safeExchangeLocationId && data.type === "LAW_ENFORCEMENT") {
+    await prisma.safeExchangeLocation.update({ where: { id: data.safeExchangeLocationId }, data: { meetupCount: { increment: 1 } } });
   }
 
   await prisma.message.create({

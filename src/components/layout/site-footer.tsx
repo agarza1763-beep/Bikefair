@@ -15,6 +15,7 @@ const COLUMNS = [
     title: "Trust & Safety",
     links: [
       { href: "/safety", label: "Safety Center" },
+      { href: "/safe-exchange-locations", label: "Safe Exchange Locations" },
       { href: "/how-it-works", label: "How It Works" },
       { href: "/community-guidelines", label: "Community Guidelines" },
     ],
@@ -63,7 +64,8 @@ export function SiteFooter() {
             {BRAND_NAME} facilitates connections between buyers and sellers of used bicycles. The actual bicycle transaction — including payment and exchange — occurs
             directly between the buyer and seller. {BRAND_NAME} does not take ownership of any bicycle listed on the platform, does not process bicycle purchase payments,
             and does not provide insurance, identity verification, law enforcement services, or professional inspections unless explicitly stated as a completed,
-            configured integration. Participating meetup locations, including bike shops, are not parties to any transaction.
+            configured integration. Participating meetup locations, including bike shops and any listed law-enforcement-supported locations, are not parties to any
+            transaction.
           </p>
           <p className="mt-3">© {new Date().getFullYear()} James Silver EP, DBA {BRAND_NAME}. All rights reserved.</p>
         </div>

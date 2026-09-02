@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BIKE_CATEGORIES, CONDITIONS, FRAME_MATERIALS, MEETUP_TYPES, MILEAGE_LEVELS, REPORT_TYPES, US_STATES } from "@/lib/constants";
+import { AGENCY_TYPES, BIKE_CATEGORIES, CONDITIONS, FRAME_MATERIALS, MEETUP_TYPES, MILEAGE_LEVELS, REPORT_TYPES, US_STATES } from "@/lib/constants";
 
 export const signUpSchema = z.object({
   name: z.string().trim().min(2, "Please enter your full name").max(80),
@@ -72,6 +72,7 @@ export const offerSchema = z.object({
 export const meetupSchema = z.object({
   type: z.enum(MEETUP_TYPES),
   bikeShopId: z.string().optional(),
+  safeExchangeLocationId: z.string().optional(),
   locationName: z.string().trim().min(1).max(120),
   address: z.string().trim().max(200).optional().or(z.literal("")),
   city: z.string().trim().max(80).optional().or(z.literal("")),
@@ -115,6 +116,19 @@ export const bikeShopSchema = z.object({
   hours: z.record(z.string(), z.string()).optional(),
 });
 export type BikeShopInput = z.infer<typeof bikeShopSchema>;
+
+export const safeExchangeLocationSchema = z.object({
+  name: z.string().trim().min(2, "Location name is required").max(100),
+  agencyType: z.enum(AGENCY_TYPES),
+  address: z.string().trim().min(3, "Street address is required").max(200),
+  city: z.string().trim().min(1, "City is required").max(80),
+  state: z.enum(US_STATES, { message: "Select a state" }),
+  zip: z.string().trim().max(10).optional().or(z.literal("")),
+  phone: z.string().trim().max(30).optional().or(z.literal("")),
+  notes: z.string().trim().max(500).optional().or(z.literal("")),
+  isActive: z.boolean().optional(),
+});
+export type SafeExchangeLocationInput = z.infer<typeof safeExchangeLocationSchema>;
 
 export const reviewSchema = z.object({
   overallRating: z.coerce.number().int().min(1).max(5),

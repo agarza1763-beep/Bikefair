@@ -33,6 +33,7 @@ interface Meetup {
   status: string;
   scheduledAt: string | null;
   bikeShopName: string | null;
+  safeExchangeLocationName: string | null;
 }
 interface BikeShop {
   id: string;
@@ -40,6 +41,12 @@ interface BikeShop {
   city: string;
   state: string;
   offersInspection: boolean;
+}
+interface SafeExchangeLocation {
+  id: string;
+  name: string;
+  city: string;
+  state: string;
 }
 interface TransactionInfo {
   id: string;
@@ -57,6 +64,7 @@ export function ConversationThread({
   meetups,
   transaction,
   bikeShops,
+  safeExchangeLocations,
   otherUserId,
 }: {
   conversationId: string;
@@ -67,6 +75,7 @@ export function ConversationThread({
   meetups: Meetup[];
   transaction: TransactionInfo | null;
   bikeShops: BikeShop[];
+  safeExchangeLocations: SafeExchangeLocation[];
   otherUserId: string;
 }) {
   const router = useRouter();
@@ -74,7 +83,18 @@ export function ConversationThread({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [showMeetupForm, setShowMeetupForm] = useState(false);
-  const [meetupForm, setMeetupForm] = useState({ type: "PUBLIC" as MeetupType, bikeShopId: "", locationName: "", address: "", city: "", state: "", scheduledAt: "", inspectionRequested: false, notes: "" });
+  const [meetupForm, setMeetupForm] = useState({
+    type: "PUBLIC" as MeetupType,
+    bikeShopId: "",
+    safeExchangeLocationId: "",
+    locationName: "",
+    address: "",
+    city: "",
+    state: "",
+    scheduledAt: "",
+    inspectionRequested: false,
+    notes: "",
+  });
 
   void MEETUP_STATUSES;
 
@@ -234,8 +254,25 @@ export function ConversationThread({
                 ))}
               </select>
             )}
-            {meetupForm.type !== "BIKE_SHOP" && (
-              <input className="input" placeholder="Location name (e.g. Central Park, Main St. Police Station lobby)" value={meetupForm.locationName} onChange={(e) => setMeetupForm({ ...meetupForm, locationName: e.target.value })} />
+            {meetupForm.type === "LAW_ENFORCEMENT" && (
+              <select
+                className="input"
+                value={meetupForm.safeExchangeLocationId}
+                onChange={(e) =>
+                  setMeetupForm({ ...meetupForm, safeExchangeLocationId: e.target.value, locationName: safeExchangeLocations.find((s) => s.id === e.target.value)?.name ?? "" })
+                }
+              >
+                <option value="">Select a location…</option>
+                {safeExchangeLocations.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} — {s.city}, {s.state}
+                  </option>
+                ))}
+                {safeExchangeLocations.length === 0 && <option disabled>No locations available in your area yet</option>}
+              </select>
+            )}
+            {meetupForm.type !== "BIKE_SHOP" && meetupForm.type !== "LAW_ENFORCEMENT" && (
+              <input className="input" placeholder="Location name (e.g. Central Park, main library parking lot)" value={meetupForm.locationName} onChange={(e) => setMeetupForm({ ...meetupForm, locationName: e.target.value })} />
             )}
             <input className="input" type="datetime-local" value={meetupForm.scheduledAt} onChange={(e) => setMeetupForm({ ...meetupForm, scheduledAt: e.target.value })} />
             {meetupForm.type === "BIKE_SHOP" && bikeShops.find((s) => s.id === meetupForm.bikeShopId)?.offersInspection && (
@@ -254,7 +291,7 @@ export function ConversationThread({
           {meetups.map((m) => (
             <li key={m.id} className="rounded-lg bg-charcoal-50 px-3 py-2 text-sm">
               <p className="font-medium text-charcoal-900">
-                {MEETUP_TYPE_LABELS[m.type as MeetupType]} — {m.bikeShopName ?? m.locationName}
+                {MEETUP_TYPE_LABELS[m.type as MeetupType]} — {m.bikeShopName ?? m.safeExchangeLocationName ?? m.locationName}
               </p>
               <p className="text-xs text-charcoal-500">
                 {m.scheduledAt ? new Date(m.scheduledAt).toLocaleString() : "No time set"} · {m.status.toLowerCase()}
