@@ -67,7 +67,7 @@ export function SiteFooter() {
             configured integration. Participating meetup locations, including bike shops and any listed law-enforcement-supported locations, are not parties to any
             transaction.
           </p>
-          <p className="mt-3">© {new Date().getFullYear()} James Silver EP, DBA {BRAND_NAME}. All rights reserved.</p>
+          <p className="mt-3">© {new Date().getFullYear()} James Silver EP, LLC, DBA {BRAND_NAME}. All rights reserved.</p>
         </div>
       </div>
     </footer>
