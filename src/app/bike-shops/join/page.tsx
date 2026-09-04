@@ -19,7 +19,7 @@ const BENEFITS = [
   "Available as a designated safe meetup location for local buyers and sellers",
   "New foot traffic from cyclists you haven't met yet — a reason for them to walk into your shop",
   "Optional: offer a paid professional inspection/tune-up service to buyers meeting at your shop",
-  "Local Market Pulse dashboard — trending categories, brands, asking prices, and recent sale comps for your city, built from real BikeFair activity you can't get anywhere public",
+  "Local Market Pulse dashboard, customized to what you actually sell — track specific categories and brands, see which ones are undersupplied in your area (an Opportunities feed for what to stock or seek trade-ins for), and follow month-over-month listing/sales momentum — all built from real BikeFair activity you can't get anywhere public",
 ];
 
 export default async function JoinBikeShopPage() {

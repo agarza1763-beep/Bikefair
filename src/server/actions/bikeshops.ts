@@ -101,3 +101,21 @@ export async function startBikeShopMembershipCheckoutAction(bikeShopId: string, 
   if (!session.url) return { ok: false, error: "Could not start checkout. Please try again." };
   return { ok: true, data: { url: session.url } };
 }
+
+/** Lets a shop owner pin specific categories/brands to the top of their Shop Dashboard. */
+export async function updateShopWatchlistAction(categories: string[], brands: string[]): Promise<ActionResult> {
+  const user = await requireUser();
+  const shop = await prisma.bikeShop.findUnique({ where: { ownerUserId: user.id } });
+  if (!shop) return { ok: false, error: "No shop linked to this account." };
+
+  await prisma.bikeShop.update({
+    where: { id: shop.id },
+    data: {
+      watchedCategories: JSON.stringify(categories.slice(0, 10)),
+      watchedBrands: JSON.stringify(brands.map((b) => b.trim()).filter(Boolean).slice(0, 10)),
+    },
+  });
+
+  revalidatePath("/account/shop-dashboard");
+  return { ok: true };
+}

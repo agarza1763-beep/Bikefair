@@ -333,6 +333,11 @@ model BikeShop {
   isDemo           Boolean  @default(false)
   meetupCount      Int      @default(0)
 
+  // Shop Dashboard (Local Market Pulse) personalization — which categories/brands this shop wants
+  // pinned to the top of their dashboard. JSON string arrays; empty/null means "no preference set".
+  watchedCategories String? // JSON array of BikeCategory values
+  watchedBrands     String? // JSON array of brand name strings
+
   // Paid partner membership (see Fee types BIKE_SHOP_MEMBERSHIP / BIKE_SHOP_MEMBERSHIP_YEARLY) — a
   // shop that self-signs up via /bike-shops/join starts PENDING and becomes ACTIVE automatically
   // once Stripe confirms payment (see /api/stripe/webhook). Shops added directly by an admin (e.g.
