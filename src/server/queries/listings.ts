@@ -99,6 +99,7 @@ export async function fetchListings(filters: BrowseFilters) {
   let listings = await prisma.bikeListing.findMany({
     where,
     include: listingWithRelations,
+    omit: { serialNumber: true },
     orderBy: filters.sort === "price_asc" ? { askingPrice: "asc" } : filters.sort === "price_desc" ? { askingPrice: "desc" } : { publishedAt: "desc" },
     take: 200,
   });
@@ -136,6 +137,7 @@ export async function fetchListings(filters: BrowseFilters) {
 export async function fetchListingDetail(id: string) {
   const listing = await prisma.bikeListing.findUnique({
     where: { id },
+    omit: { serialNumber: true },
     include: {
       images: { orderBy: { position: "asc" } },
       components: true,
@@ -153,12 +155,7 @@ export async function fetchListingDetail(id: string) {
       },
     },
   });
-  if (!listing) return null;
-
-  // Never expose the raw serial number to any client — only its review status.
-  const { serialNumber: _serialNumber, ...safeListing } = listing;
-  void _serialNumber;
-  return safeListing;
+  return listing;
 }
 
 export async function fetchFeaturedListings(limit = 8) {
@@ -166,6 +163,7 @@ export async function fetchFeaturedListings(limit = 8) {
     prisma.bikeListing.findMany({
       where: { status: "ACTIVE" },
       include: listingWithRelations,
+      omit: { serialNumber: true },
       orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }],
       take: limit,
     }),
