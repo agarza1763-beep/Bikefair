@@ -79,6 +79,10 @@ export async function sendMessageAction(conversationId: string, body: string, is
 
 export async function markConversationReadAction(conversationId: string): Promise<ActionResult> {
   const user = await requireUser();
+  const conversation = await prisma.conversation.findUnique({ where: { id: conversationId } });
+  if (!conversation || (conversation.buyerId !== user.id && conversation.sellerId !== user.id)) {
+    return { ok: false, error: "Not authorized." };
+  }
   await prisma.message.updateMany({
     where: { conversationId, senderId: { not: user.id }, readAt: null },
     data: { readAt: new Date() },
