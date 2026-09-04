@@ -10,10 +10,10 @@ export async function requireUser() {
   const session = await auth();
   if (!session?.user) throw new Error("You must be signed in to do that.");
 
-  const fresh = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isSuspended: true, role: true } });
+  const fresh = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isSuspended: true, role: true, image: true } });
   if (!fresh || fresh.isSuspended) throw new Error("Your account has been suspended.");
 
-  return { ...session.user, role: fresh.role };
+  return { ...session.user, role: fresh.role, image: fresh.image };
 }
 
 export async function requireAdmin() {

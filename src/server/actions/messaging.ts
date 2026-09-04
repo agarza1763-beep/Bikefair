@@ -22,6 +22,7 @@ async function assertNotBlocked(userAId: string, userBId: string) {
 export async function startConversationAction(listingId: string, body: string): Promise<ActionResult<{ conversationId: string }>> {
   try {
     const user = await requireUser();
+    if (!user.image) return { ok: false, error: "Add a profile photo to your account before messaging a seller — this helps them know who they're dealing with." };
     const rateLimit = checkRateLimit(`message:${user.id}`, { limit: 30, windowMs: 10 * 60 * 1000 });
     if (!rateLimit.ok) return { ok: false, error: rateLimit.error };
 
@@ -53,6 +54,7 @@ export async function startConversationAction(listingId: string, body: string): 
 export async function sendMessageAction(conversationId: string, body: string, isQuickMessage = false): Promise<ActionResult> {
   try {
     const user = await requireUser();
+    if (!user.image) return { ok: false, error: "Add a profile photo to your account before sending messages — visit your account page to add one." };
     const rateLimit = checkRateLimit(`message:${user.id}`, { limit: 30, windowMs: 10 * 60 * 1000 });
     if (!rateLimit.ok) return { ok: false, error: rateLimit.error };
 

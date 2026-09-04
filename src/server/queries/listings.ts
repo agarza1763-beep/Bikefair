@@ -8,7 +8,7 @@ import type { PricePositionLabel } from "@/lib/constants";
 const listingWithRelations = {
   images: { orderBy: { position: "asc" as const }, take: 1 },
   valuations: { where: { isCurrent: true }, take: 1 },
-  seller: { select: { id: true, name: true, verificationLevel: true, isTrustedSeller: true } },
+  seller: { select: { id: true, name: true, image: true, verificationLevel: true, isTrustedSeller: true } },
 };
 
 export function toBikeCardData(
@@ -24,7 +24,7 @@ export function toBikeCardData(
     city: string;
     state: string;
     images: { url: string }[];
-    seller: { name: string; verificationLevel: string };
+    seller: { name: string; image?: string | null; verificationLevel: string };
     valuations: { estimatedLow: number; estimatedHigh: number; pricePositionLabel: string }[];
     isShopInventory?: boolean;
   },
@@ -44,6 +44,7 @@ export function toBikeCardData(
     state: listing.state,
     imageUrl: listing.images[0]?.url,
     sellerName: listing.seller.name,
+    sellerImage: listing.seller.image ?? null,
     sellerVerificationLevel: listing.seller.verificationLevel,
     estimatedLowCents: val?.estimatedLow ?? null,
     estimatedHighCents: val?.estimatedHigh ?? null,
@@ -146,6 +147,7 @@ export async function fetchListingDetail(id: string) {
         select: {
           id: true,
           name: true,
+          image: true,
           verificationLevel: true,
           isTrustedSeller: true,
           createdAt: true,

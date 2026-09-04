@@ -3,6 +3,7 @@ import { BadgeCheck, TrendingUp } from "lucide-react";
 import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { VerifyPhoneButton } from "./verify-phone-button";
+import { ProfilePhotoUploader } from "@/components/account/profile-photo-uploader";
 
 export const metadata = { title: "My Account — BikeFair" };
 
@@ -20,7 +21,7 @@ export default async function AccountPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="flex items-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-charcoal-900 font-display text-2xl font-bold text-white">{user.name.charAt(0)}</div>
+        <ProfilePhotoUploader currentImage={user.image} name={user.name} />
         <div>
           <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-charcoal-900">
             {user.name}
@@ -31,6 +32,12 @@ export default async function AccountPage() {
           </p>
         </div>
       </div>
+
+      {!user.image && (
+        <p className="mt-3 rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+          Add a profile photo above — it's required before you can create a listing or message another user, so buyers and sellers know who they're dealing with.
+        </p>
+      )}
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         <Link href="/account/listings" className="card p-5 hover:border-green-600">

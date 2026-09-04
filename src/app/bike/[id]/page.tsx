@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { BadgeCheck, ShieldCheck, Star } from "lucide-react";
 import { fetchListingDetail } from "@/server/queries/listings";
 import { getRecognizedBrandNames } from "@/server/queries/brands";
@@ -147,8 +148,12 @@ export default async function BikeDetailPage({ params }: { params: Promise<{ id:
           <div className="card p-6">
             <h3 className="font-display text-sm font-bold text-charcoal-900">Seller</h3>
             <div className="mt-3 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-charcoal-100 font-display font-bold text-charcoal-700">
-                {listing.seller.name.charAt(0)}
+              <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full bg-charcoal-100 font-display font-bold text-charcoal-700">
+                {listing.seller.image ? (
+                  <Image src={listing.seller.image} alt="" fill className="object-cover" />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center">{listing.seller.name.charAt(0)}</span>
+                )}
               </div>
               <div>
                 <p className="flex items-center gap-1 font-medium text-charcoal-900">

@@ -18,6 +18,7 @@ export interface BikeCardData {
   state: string;
   imageUrl?: string | null;
   sellerName: string;
+  sellerImage?: string | null;
   sellerVerificationLevel: string;
   estimatedLowCents?: number | null;
   estimatedHighCents?: number | null;
@@ -81,7 +82,14 @@ export function BikeCard({ bike }: { bike: BikeCardData }) {
             {bike.frameSize} · {bike.city}, {bike.state}
           </span>
         </div>
-        <div className="flex items-center gap-1 text-xs font-medium text-charcoal-700">
+        <div className="flex items-center gap-1.5 text-xs font-medium text-charcoal-700">
+          <span className="relative h-5 w-5 shrink-0 overflow-hidden rounded-full bg-charcoal-900">
+            {bike.sellerImage ? (
+              <Image src={bike.sellerImage} alt="" fill className="object-cover" />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center text-[10px] font-bold text-white">{bike.sellerName.charAt(0)}</span>
+            )}
+          </span>
           {bike.sellerVerificationLevel !== "BASIC" && <BadgeCheck className="h-3.5 w-3.5 text-green-600" />}
           <span>{bike.sellerName}</span>
           {bike.sellerVerificationLevel !== "BASIC" && <span className="text-green-700">Verified</span>}

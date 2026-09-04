@@ -78,6 +78,7 @@ export async function previewStandaloneValuationAction(input: StandaloneValuatio
 
 export async function createListingAction(input: ListingWizardInput): Promise<ActionResult<{ id: string }>> {
   const user = await requireUser();
+  if (!user.image) return { ok: false, error: "Add a profile photo to your account before creating a listing — this helps buyers know who they're dealing with." };
   const parsed = listingWizardSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid listing data." };
   const data = parsed.data;

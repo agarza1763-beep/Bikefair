@@ -15,8 +15,8 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
     where: { id },
     include: {
       listing: { include: { images: { take: 1, orderBy: { position: "asc" } } } },
-      buyer: { select: { id: true, name: true } },
-      seller: { select: { id: true, name: true } },
+      buyer: { select: { id: true, name: true, image: true } },
+      seller: { select: { id: true, name: true, image: true } },
       messages: { orderBy: { createdAt: "asc" }, include: { sender: { select: { name: true } } } },
       offers: { orderBy: { createdAt: "desc" } },
       meetups: { orderBy: { createdAt: "desc" }, include: { bikeShop: true, safeExchangeLocation: true } },
@@ -47,7 +47,17 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
           <Link href={`/bike/${conversation.listingId}`} className="truncate font-medium text-charcoal-900 hover:underline">
             {conversation.listing.title}
           </Link>
-          <p className="text-sm text-charcoal-500">with {otherUser.name}</p>
+          <p className="flex items-center gap-1.5 text-sm text-charcoal-500">
+            with
+            <span className="relative h-5 w-5 shrink-0 overflow-hidden rounded-full bg-charcoal-900">
+              {otherUser.image ? (
+                <Image src={otherUser.image} alt="" fill className="object-cover" />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center text-[10px] font-bold text-white">{otherUser.name.charAt(0)}</span>
+              )}
+            </span>
+            {otherUser.name}
+          </p>
         </div>
         <p className="font-semibold text-charcoal-700">{formatCents(conversation.listing.askingPrice)}</p>
       </div>
