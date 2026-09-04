@@ -5,7 +5,10 @@ import { fetchListings, toBikeCardData } from "@/server/queries/listings";
 import { getRecognizedBrandNames } from "@/server/queries/brands";
 import { SearchX } from "lucide-react";
 
-export const metadata = { title: "Browse Bikes — BikeFair" };
+export const metadata = {
+  title: "Browse Bikes",
+  description: "Browse used road, mountain, gravel, and e-bikes for sale locally — with fair-value pricing on every listing.",
+};
 
 type SearchParams = Record<string, string | undefined>;
 

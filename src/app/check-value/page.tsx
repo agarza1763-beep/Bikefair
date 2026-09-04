@@ -2,7 +2,10 @@ import Link from "next/link";
 import { LinkButton } from "@/components/ui/button";
 import { CheckValueForm } from "./check-value-form";
 
-export const metadata = { title: "Check Your Bike's Value — BikeFair" };
+export const metadata = {
+  title: "Check Your Bike's Value",
+  description: "Get a free estimated fair market value for your used bicycle in seconds — no listing required.",
+};
 
 export default function CheckValuePage() {
   return (

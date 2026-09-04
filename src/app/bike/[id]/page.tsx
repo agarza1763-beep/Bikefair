@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { BadgeCheck, ShieldCheck, Star } from "lucide-react";
@@ -23,6 +24,25 @@ import {
   type MileageLevel,
   type PricePositionLabel,
 } from "@/lib/constants";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const listing = await fetchListingDetail(id);
+  if (!listing || listing.status === "REMOVED") return {};
+
+  const title = `${listing.year} ${listing.brand} ${listing.model} — ${formatCents(listing.askingPrice)}`;
+  const description = `${BIKE_CATEGORY_LABELS[listing.category as keyof typeof BIKE_CATEGORY_LABELS] ?? listing.category} bike for sale in ${listing.city}, ${listing.state}. ${
+    listing.description.length > 140 ? listing.description.slice(0, 140) + "…" : listing.description
+  }`;
+  const image = listing.images[0]?.url;
+
+  return {
+    title,
+    description,
+    openGraph: { title, description, images: image ? [{ url: image }] : undefined },
+    twitter: { card: image ? "summary_large_image" : "summary", title, description, images: image ? [image] : undefined },
+  };
+}
 
 export default async function BikeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

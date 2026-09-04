@@ -4,7 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { US_STATES, formatCents } from "@/lib/constants";
 import { getFee } from "@/lib/fees";
 
-export const metadata = { title: "Bike Shops — BikeFair" };
+export const metadata = {
+  title: "Bike Shops",
+  description: "Participating local bike shops that serve as designated, trusted meetup locations for BikeFair transactions.",
+};
 
 export default async function BikeShopsPage({ searchParams }: { searchParams: Promise<{ state?: string; city?: string }> }) {
   const { state, city } = await searchParams;

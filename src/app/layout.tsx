@@ -10,9 +10,28 @@ import { auth } from "@/auth";
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const manrope = Manrope({ variable: "--font-manrope", subsets: ["latin"], weight: ["500", "600", "700", "800"] });
 
+const SITE_URL = "https://shopbikefair.com";
+const DEFAULT_DESCRIPTION = "Fair prices. Local transactions. Safer meetups. A marketplace built specifically for buying and selling used bicycles.";
+
 export const metadata: Metadata = {
-  title: `${BRAND_NAME} — Buy & Sell Used Bikes With Confidence`,
-  description: "Fair prices. Local transactions. Safer meetups. A marketplace built specifically for buying and selling used bicycles.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: `${BRAND_NAME} — Buy & Sell Used Bikes With Confidence`,
+    template: `%s — ${BRAND_NAME}`,
+  },
+  description: DEFAULT_DESCRIPTION,
+  openGraph: {
+    type: "website",
+    siteName: BRAND_NAME,
+    title: `${BRAND_NAME} — Buy & Sell Used Bikes With Confidence`,
+    description: DEFAULT_DESCRIPTION,
+    url: SITE_URL,
+  },
+  twitter: {
+    card: "summary",
+    title: `${BRAND_NAME} — Buy & Sell Used Bikes With Confidence`,
+    description: DEFAULT_DESCRIPTION,
+  },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

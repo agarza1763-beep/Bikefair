@@ -9,7 +9,10 @@ import { LinkButton } from "@/components/ui/button";
 import { JoinForm } from "./join-form";
 import { MembershipCheckoutButtons } from "./membership-checkout-buttons";
 
-export const metadata = { title: "Become a Partner Shop — BikeFair" };
+export const metadata = {
+  title: "Become a Partner Shop",
+  description: "List your bike shop as a trusted BikeFair meetup location and get a partner-only Local Market Pulse dashboard for your city.",
+};
 
 const BENEFITS = [
   "Listed on the BikeFair Bike Shops directory for cyclists searching in your area",

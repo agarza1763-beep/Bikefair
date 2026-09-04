@@ -2,7 +2,10 @@ import Link from "next/link";
 import { ShieldCheck, MapPin, Landmark, Wrench, AlertTriangle, BatteryWarning } from "lucide-react";
 import { BRAND_NAME } from "@/lib/constants";
 
-export const metadata = { title: "Safety Center — BikeFair" };
+export const metadata = {
+  title: "Safety Center",
+  description: "How to meet safely for a bicycle sale — public meetup tips, participating bike shops, law-enforcement-supported exchange zones, and e-bike battery safety.",
+};
 
 export default function SafetyPage() {
   return (

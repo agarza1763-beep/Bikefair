@@ -1,7 +1,10 @@
 import { LinkButton } from "@/components/ui/button";
 import { ValuationBreakdown } from "@/components/bike/valuation-breakdown";
 
-export const metadata = { title: "Fair Value Guide — BikeFair" };
+export const metadata = {
+  title: "Fair Value Guide",
+  description: "How BikeFair estimates a used bicycle's fair market value — brand, model year, groupset, condition, mileage, and more.",
+};
 
 const FACTORS = [
   "Brand & model",

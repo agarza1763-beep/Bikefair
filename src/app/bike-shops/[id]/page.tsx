@@ -1,7 +1,19 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { BadgeCheck, MapPin, Phone, Globe, Wrench } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatCents } from "@/lib/constants";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const shop = await prisma.bikeShop.findUnique({ where: { id }, select: { name: true, city: true, state: true, description: true } });
+  if (!shop) return {};
+
+  const title = `${shop.name} — ${shop.city}, ${shop.state}`;
+  const description = shop.description || `${shop.name} is a BikeFair partner bike shop in ${shop.city}, ${shop.state} — a designated meetup location for local bicycle transactions.`;
+
+  return { title, description, openGraph: { title, description }, twitter: { card: "summary", title, description } };
+}
 
 export default async function BikeShopDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

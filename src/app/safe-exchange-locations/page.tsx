@@ -3,7 +3,10 @@ import { Landmark, MapPin } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { US_STATES, AGENCY_TYPE_LABELS, type AgencyType, BRAND_NAME } from "@/lib/constants";
 
-export const metadata = { title: "Safe Exchange Locations — BikeFair" };
+export const metadata = {
+  title: "Safe Exchange Locations",
+  description: "Police departments, sheriff's offices, and other public agencies with designated safe-exchange programs for local bicycle transactions across Texas.",
+};
 
 export default async function SafeExchangeLocationsPage({ searchParams }: { searchParams: Promise<{ state?: string; city?: string }> }) {
   const { state, city } = await searchParams;

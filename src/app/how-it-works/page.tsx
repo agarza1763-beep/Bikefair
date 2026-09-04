@@ -1,7 +1,10 @@
 import { LinkButton } from "@/components/ui/button";
 import { BRAND_NAME } from "@/lib/constants";
 
-export const metadata = { title: "How It Works — BikeFair" };
+export const metadata = {
+  title: "How It Works",
+  description: "How buying and selling a used bicycle on BikeFair works, step by step — from listing or browsing to a safe local meetup.",
+};
 
 const BUYER_STEPS = [
   "Search or browse bikes by type, price, and location.",
