@@ -2,7 +2,7 @@ import { Star } from "lucide-react";
 import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 
-export const metadata = { title: "My Reviews — BikeFair" };
+export const metadata = { title: "My Reviews" };
 
 export default async function AccountReviewsPage() {
   const user = await requireUser();

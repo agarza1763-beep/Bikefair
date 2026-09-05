@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { formatCents, LISTING_STATUSES } from "@/lib/constants";
 import { ListingRowActions } from "./listing-row-actions";
 
-export const metadata = { title: "My Listings — BikeFair" };
+export const metadata = { title: "My Listings" };
 
 export default async function AccountListingsPage() {
   const user = await requireUser();

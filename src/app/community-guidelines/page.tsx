@@ -1,6 +1,6 @@
 import { BRAND_NAME } from "@/lib/constants";
 
-export const metadata = { title: "Community Guidelines — BikeFair" };
+export const metadata = { title: "Community Guidelines" };
 
 const DOS = [
   "Describe your bike's condition honestly, including any needed repairs.",

@@ -1,6 +1,6 @@
 import { BRAND_NAME } from "@/lib/constants";
 
-export const metadata = { title: "Privacy Policy — BikeFair" };
+export const metadata = { title: "Privacy Policy" };
 
 export default function PrivacyPage() {
   return (

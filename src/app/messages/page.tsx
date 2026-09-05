@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { formatCents } from "@/lib/constants";
 
-export const metadata = { title: "Messages — BikeFair" };
+export const metadata = { title: "Messages" };
 
 export default async function MessagesPage() {
   const user = await requireUser();

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { SellWizard } from "./sell-wizard";
 import { ProfilePhotoUploader } from "@/components/account/profile-photo-uploader";
 
-export const metadata = { title: "Sell a Bike — BikeFair" };
+export const metadata = { title: "Sell a Bike" };
 
 export default async function SellCreatePage() {
   const user = await requireUser();

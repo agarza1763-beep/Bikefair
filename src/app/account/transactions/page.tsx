@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { formatCents } from "@/lib/constants";
 import { ReviewPrompt } from "./review-prompt";
 
-export const metadata = { title: "Transaction History — BikeFair" };
+export const metadata = { title: "Transaction History" };
 
 export default async function TransactionsPage() {
   const user = await requireUser();

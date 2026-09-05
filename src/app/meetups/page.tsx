@@ -3,7 +3,7 @@ import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { MEETUP_TYPE_LABELS, type MeetupType } from "@/lib/constants";
 
-export const metadata = { title: "Meetups — BikeFair" };
+export const metadata = { title: "Meetups" };
 
 export default async function MeetupsPage() {
   const user = await requireUser();

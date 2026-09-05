@@ -6,7 +6,7 @@ import { getLocalMarketPulse } from "@/lib/market-pulse";
 import { formatCents, BIKE_CATEGORY_LABELS, type BikeCategory } from "@/lib/constants";
 import { WatchlistEditor } from "@/components/account/watchlist-editor";
 
-export const metadata = { title: "Shop Dashboard — BikeFair" };
+export const metadata = { title: "Shop Dashboard" };
 
 export default async function ShopDashboardPage() {
   const user = await requireUser();

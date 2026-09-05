@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { ResetPasswordForm } from "./reset-password-form";
 
-export const metadata = { title: "Set a New Password — BikeFair" };
+export const metadata = { title: "Set a New Password" };
 
 export default function ResetPasswordPage() {
   return (

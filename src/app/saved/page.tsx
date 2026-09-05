@@ -4,7 +4,7 @@ import { BikeCard } from "@/components/bike/bike-card";
 import { toBikeCardData } from "@/server/queries/listings";
 import { getRecognizedBrandNames } from "@/server/queries/brands";
 
-export const metadata = { title: "Saved Bikes — BikeFair" };
+export const metadata = { title: "Saved Bikes" };
 
 export default async function SavedPage() {
   const user = await requireUser();

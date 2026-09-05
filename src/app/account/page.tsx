@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { VerifyPhoneButton } from "./verify-phone-button";
 import { ProfilePhotoUploader } from "@/components/account/profile-photo-uploader";
 
-export const metadata = { title: "My Account — BikeFair" };
+export const metadata = { title: "My Account" };
 
 export default async function AccountPage() {
   const sessionUser = await requireUser();

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { currentUser } from "@/lib/session";
 import { EditListingForm } from "./edit-listing-form";
 
-export const metadata = { title: "Edit Listing — BikeFair" };
+export const metadata = { title: "Edit Listing" };
 
 export default async function EditListingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

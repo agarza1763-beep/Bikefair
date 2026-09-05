@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ForgotPasswordForm } from "./forgot-password-form";
 
-export const metadata = { title: "Reset Your Password — BikeFair" };
+export const metadata = { title: "Reset Your Password" };
 
 export default function ForgotPasswordPage() {
   return (

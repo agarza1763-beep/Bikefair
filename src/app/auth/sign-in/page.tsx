@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { SignInForm } from "./sign-in-form";
 
-export const metadata = { title: "Sign In — BikeFair" };
+export const metadata = { title: "Sign In" };
 
 export default function SignInPage() {
   return (

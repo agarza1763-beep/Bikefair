@@ -1,6 +1,6 @@
 import { BRAND_NAME } from "@/lib/constants";
 
-export const metadata = { title: "Terms of Service — BikeFair" };
+export const metadata = { title: "Terms of Service" };
 
 export default function TermsPage() {
   return (

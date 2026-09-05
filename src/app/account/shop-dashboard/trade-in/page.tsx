@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { TradeInCalculator } from "@/components/account/trade-in-calculator";
 
-export const metadata = { title: "Trade-In Calculator — BikeFair" };
+export const metadata = { title: "Trade-In Calculator" };
 
 export default async function TradeInCalculatorPage() {
   const user = await requireUser();
