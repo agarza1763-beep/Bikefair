@@ -87,7 +87,10 @@ export async function createListingAction(input: ListingWizardInput): Promise<Ac
   const askingPriceCents = dollarsInputToCents(data.askingPrice);
   const originalMsrpCents = data.originalMsrp ? dollarsInputToCents(data.originalMsrp) : null;
   const ownedShop = await prisma.bikeShop.findUnique({ where: { ownerUserId: user.id }, select: { isVerified: true } });
-  const isShopInventory = !!ownedShop?.isVerified;
+  // Shop sellers choose per-listing whether it's new retail stock (no fair-value badge — that
+  // logic is built for pricing used bikes) or a used bike they acquired, e.g. via trade-in (shows
+  // fair value like any other used listing, since that's genuinely what it is).
+  const isShopInventory = !!ownedShop?.isVerified && data.isNewInventory !== false;
 
   const listing = await prisma.bikeListing.create({
     data: {

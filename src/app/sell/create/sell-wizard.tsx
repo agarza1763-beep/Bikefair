@@ -58,6 +58,7 @@ interface WizardState {
   prefersBikeShopMeetup: boolean;
   prefersLawEnforcement: boolean;
   meetupNotes: string;
+  isNewInventory: boolean;
 }
 
 const initialState: WizardState = {
@@ -89,6 +90,7 @@ const initialState: WizardState = {
   prefersBikeShopMeetup: true,
   prefersLawEnforcement: false,
   meetupNotes: "",
+  isNewInventory: true,
 };
 
 export function SellWizard({ isShopSeller = false }: { isShopSeller?: boolean }) {
@@ -179,6 +181,7 @@ export function SellWizard({ isShopSeller = false }: { isShopSeller?: boolean })
       prefersBikeShopMeetup: form.prefersBikeShopMeetup,
       prefersLawEnforcement: form.prefersLawEnforcement,
       meetupNotes: form.meetupNotes,
+      isNewInventory: isShopSeller ? form.isNewInventory : undefined,
     });
     setPublishing(false);
     if (!res.ok) return setError(res.error);
@@ -202,6 +205,33 @@ export function SellWizard({ isShopSeller = false }: { isShopSeller?: boolean })
       <div className="card p-6 sm:p-8">
         {step === 1 && (
           <StepShell title="What kind of bike is it?">
+            {isShopSeller && (
+              <div className="mb-5">
+                <p className="label">Is this new retail stock, or a used bike (e.g. a trade-in)?</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => set("isNewInventory", true)}
+                    className={`rounded-xl border-2 p-3 text-left text-sm font-medium transition-colors ${
+                      form.isNewInventory ? "border-green-600 bg-green-50 text-green-800" : "border-charcoal-100 text-charcoal-700 hover:border-charcoal-300"
+                    }`}
+                  >
+                    New Inventory
+                    <p className="mt-0.5 text-xs font-normal text-charcoal-500">No fair-value badge shown — pricing is up to you.</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => set("isNewInventory", false)}
+                    className={`rounded-xl border-2 p-3 text-left text-sm font-medium transition-colors ${
+                      !form.isNewInventory ? "border-green-600 bg-green-50 text-green-800" : "border-charcoal-100 text-charcoal-700 hover:border-charcoal-300"
+                    }`}
+                  >
+                    Used / Trade-In
+                    <p className="mt-0.5 text-xs font-normal text-charcoal-500">Priced and shown like any other used listing.</p>
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {BIKE_CATEGORIES.map((c) => (
                 <button
@@ -325,7 +355,7 @@ export function SellWizard({ isShopSeller = false }: { isShopSeller?: boolean })
           </StepShell>
         )}
 
-        {step === 8 && isShopSeller && (
+        {step === 8 && isShopSeller && form.isNewInventory && (
           <StepShell title="Your Estimated Fair Value">
             <p className="rounded-xl bg-charcoal-50 p-4 text-sm text-charcoal-600">
               Fair value estimates aren't shown on new shop inventory — they're built for pricing used bikes by condition and wear, which doesn't apply to brand-new stock. Your listing will
@@ -334,7 +364,7 @@ export function SellWizard({ isShopSeller = false }: { isShopSeller?: boolean })
           </StepShell>
         )}
 
-        {step === 8 && !isShopSeller && (
+        {step === 8 && (!isShopSeller || !form.isNewInventory) && (
           <StepShell title="Your Estimated Fair Value">
             {!valuation ? (
               <div className="flex flex-col items-center py-8">

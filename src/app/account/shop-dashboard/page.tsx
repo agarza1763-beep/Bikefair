@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { TrendingUp, Tag, DollarSign, Clock, Star, Sparkles, ArrowUp, ArrowDown } from "lucide-react";
+import { TrendingUp, Tag, DollarSign, Clock, Star, Sparkles, ArrowUp, ArrowDown, Calculator } from "lucide-react";
 import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { getLocalMarketPulse } from "@/lib/market-pulse";
@@ -54,6 +54,20 @@ export default async function ShopDashboardPage() {
         </div>
         <WatchlistEditor initialCategories={watchedCategories} initialBrands={watchedBrands} />
       </div>
+
+      <Link
+        href="/account/shop-dashboard/trade-in"
+        className="mt-6 flex items-center gap-4 rounded-2xl border-2 border-dashed border-green-600 bg-green-50 p-5 transition-colors hover:bg-green-100"
+      >
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-green-700 text-white">
+          <Calculator className="h-5 w-5" />
+        </span>
+        <div className="flex-1">
+          <p className="font-display text-base font-bold text-green-900">Trade-In Calculator</p>
+          <p className="text-sm text-green-800">Price a customer's trade-in on the spot, then list it as used inventory to run your own resale market on BikeFair.</p>
+        </div>
+        <span className="shrink-0 rounded-full bg-green-700 px-4 py-2 text-sm font-semibold text-white">Open →</span>
+      </Link>
 
       <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
         <p className="font-medium">Local Market Pulse — {pulse.scopeLabel}</p>

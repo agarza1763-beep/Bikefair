@@ -97,6 +97,7 @@ export const listingWizardSchema = listingBasicsSchema
   .merge(listingMeetupPrefsSchema)
   .extend({
     images: z.array(z.string().min(1)).min(1, "Add at least one photo"),
+    isNewInventory: z.boolean().optional(),
   });
 export type ListingWizardInput = z.infer<typeof listingWizardSchema>;
 
