@@ -2,7 +2,7 @@ import Link from "next/link";
 import { TrendingUp, Tag, DollarSign, Clock, Star, Sparkles, ArrowUp, ArrowDown, Calculator } from "lucide-react";
 import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { getLocalMarketPulse } from "@/lib/market-pulse";
+import { getLocalMarketPulse, type CategoryDeepDive, type MomentumStat } from "@/lib/market-pulse";
 import { formatCents, BIKE_CATEGORY_LABELS, type BikeCategory } from "@/lib/constants";
 import { WatchlistEditor } from "@/components/account/watchlist-editor";
 
@@ -43,7 +43,7 @@ export default async function ShopDashboardPage() {
   const watchedBrands: string[] = shop.watchedBrands ? JSON.parse(shop.watchedBrands) : [];
   const pulse = await getLocalMarketPulse(shop.city, shop.state, { categories: watchedCategories, brands: watchedBrands });
 
-  const hasFocus = pulse.watchedCategoryStats.length > 0 || pulse.watchedBrandStats.length > 0;
+  const hasFocus = pulse.watchedCategoryDeepDives.length > 0 || pulse.watchedBrandStats.length > 0;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
@@ -83,22 +83,20 @@ export default async function ShopDashboardPage() {
           <h2 className="flex items-center gap-1.5 font-display text-sm font-bold uppercase tracking-wide text-charcoal-400">
             <Star className="h-3.5 w-3.5 fill-accent-500 text-accent-600" /> Your Focus
           </h2>
-          <div className="mt-2 grid gap-4 sm:grid-cols-2">
-            {pulse.watchedCategoryStats.length > 0 && (
-              <MarketCard icon={<TrendingUp className="h-5 w-5" />} title="Watched Categories">
-                <ul className="space-y-2">
-                  {pulse.watchedCategoryStats.map((c) => (
-                    <li key={c.category} className="flex items-center justify-between text-sm">
-                      <span className="text-charcoal-700">{BIKE_CATEGORY_LABELS[c.category as BikeCategory] ?? c.category}</span>
-                      <span className="text-charcoal-400">
-                        {c.totalViews} views · {c.listingCount} listing{c.listingCount === 1 ? "" : "s"}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </MarketCard>
-            )}
-            {pulse.watchedBrandStats.length > 0 && (
+          <p className="mt-1 text-sm text-charcoal-500">
+            The full local picture for what you're watching — enough to size a pre-order against real demand, not a guess.
+          </p>
+
+          {pulse.watchedCategoryDeepDives.length > 0 && (
+            <div className="mt-3 space-y-4">
+              {pulse.watchedCategoryDeepDives.map((d) => (
+                <CategoryDeepDiveCard key={d.category} deepDive={d} />
+              ))}
+            </div>
+          )}
+
+          {pulse.watchedBrandStats.length > 0 && (
+            <div className="mt-4">
               <MarketCard icon={<Tag className="h-5 w-5" />} title="Watched Brands">
                 <ul className="space-y-2">
                   {pulse.watchedBrandStats.map((b) => (
@@ -111,8 +109,8 @@ export default async function ShopDashboardPage() {
                   ))}
                 </ul>
               </MarketCard>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -255,6 +253,101 @@ export default async function ShopDashboardPage() {
         can shift quickly; treat these as directional, not exact.
       </p>
     </div>
+  );
+}
+
+function CategoryDeepDiveCard({ deepDive: d }: { deepDive: CategoryDeepDive }) {
+  const label = BIKE_CATEGORY_LABELS[d.category as BikeCategory] ?? d.category;
+
+  if (d.listingCount === 0 && d.soldCount === 0) {
+    return (
+      <div className="card p-5">
+        <h3 className="font-display text-base font-bold text-charcoal-900">{label}</h3>
+        <p className="mt-2 text-sm text-charcoal-400">No local activity in this category yet — check back as more listings and sales come in.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card p-5">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="font-display text-base font-bold text-charcoal-900">{label}</h3>
+        <span className="text-xs text-charcoal-400">
+          {d.totalViews} views · {d.listingCount} active listing{d.listingCount === 1 ? "" : "s"}
+        </span>
+      </div>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+        <Stat label="Asking price" value={d.avgAskingCents != null ? `avg ${formatCents(d.avgAskingCents)}` : "—"}>
+          {d.minAskingCents != null && d.maxAskingCents != null && (
+            <span className="text-xs text-charcoal-400">
+              {formatCents(d.minAskingCents)}–{formatCents(d.maxAskingCents)} range
+            </span>
+          )}
+        </Stat>
+        <Stat label="Sold (90 days)" value={String(d.soldCount)}>
+          {d.avgDaysOnMarket != null && <span className="text-xs text-charcoal-400">avg {d.avgDaysOnMarket} days on market</span>}
+        </Stat>
+        <Stat label="Momentum (30d)" value={<MomentumInline momentum={d.momentum} />} />
+      </div>
+
+      {d.topBrands.length > 0 && (
+        <div className="mt-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-charcoal-400">Top brands in {label}</p>
+          <ul className="mt-1.5 space-y-1.5">
+            {d.topBrands.map((b) => (
+              <li key={b.brand} className="flex items-center justify-between text-sm">
+                <span className="text-charcoal-700">{b.brand}</span>
+                <span className="text-charcoal-400">
+                  {b.totalViews} views · {b.listingCount} listing{b.listingCount === 1 ? "" : "s"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {d.recentSales.length > 0 && (
+        <div className="mt-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-charcoal-400">Recently sold {label.toLowerCase()} nearby</p>
+          <ul className="mt-1.5 space-y-1.5">
+            {d.recentSales.map((s, i) => (
+              <li key={i} className="text-sm text-charcoal-700">
+                {s.year} {s.brand} {s.model} — <span className="font-medium">{formatCents(s.agreedPriceCents)}</span>
+                <span className="text-charcoal-400">
+                  {s.daysOnMarket !== null && ` · ${s.daysOnMarket}d on market`} · {s.soldAt.toLocaleDateString()}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Stat({ label, value, children }: { label: string; value: React.ReactNode; children?: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-wide text-charcoal-400">{label}</p>
+      <p className="mt-0.5 text-sm font-medium text-charcoal-900">{value}</p>
+      {children}
+    </div>
+  );
+}
+
+function MomentumInline({ momentum: m }: { momentum: MomentumStat | null }) {
+  if (!m) return <span className="text-charcoal-400">—</span>;
+  return (
+    <span className="inline-flex items-center gap-1">
+      {m.newListingsCurrent} new
+      {m.listingPctChange !== null && (
+        <span className={`inline-flex items-center text-xs ${m.listingPctChange >= 0 ? "text-green-700" : "text-red-600"}`}>
+          {m.listingPctChange >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+          {Math.abs(m.listingPctChange)}%
+        </span>
+      )}
+    </span>
   );
 }
 

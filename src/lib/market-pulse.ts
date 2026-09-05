@@ -65,6 +65,30 @@ export interface Opportunity {
   viewsPerListing: number;
   cityAvgViewsPerListing: number;
 }
+export interface CategoryBrandBreakdown {
+  brand: string;
+  totalViews: number;
+  listingCount: number;
+}
+/**
+ * The full local picture for one watched category — everything a shop needs to size a pre-order:
+ * how much interest it's getting, what it's actually asking/selling for, which specific brands
+ * within the category are the ones people want, how fast it sells, and whether that's speeding up
+ * or slowing down.
+ */
+export interface CategoryDeepDive {
+  category: string;
+  totalViews: number;
+  listingCount: number;
+  avgAskingCents: number | null;
+  minAskingCents: number | null;
+  maxAskingCents: number | null;
+  topBrands: CategoryBrandBreakdown[];
+  soldCount: number;
+  avgDaysOnMarket: number | null;
+  recentSales: RecentSale[];
+  momentum: MomentumStat | null;
+}
 
 export interface MarketPulse {
   scope: "city" | "state" | "none";
@@ -79,6 +103,7 @@ export interface MarketPulse {
   opportunities: Opportunity[];
   watchedCategoryStats: CategoryStat[];
   watchedBrandStats: BrandStat[];
+  watchedCategoryDeepDives: CategoryDeepDive[];
 }
 
 async function computeMomentum(where: { city?: string; state: string }) {
@@ -142,7 +167,7 @@ async function computeMomentum(where: { city?: string; state: string }) {
 async function computeForScope(where: { city?: string; state: string }, since: Date) {
   const listingWhere = { ...where, isDemo: false, status: { in: ["ACTIVE", "SOLD"] }, createdAt: { gte: since } };
 
-  const [categoryAgg, brandAgg, priceAgg, activeCount, sales] = await Promise.all([
+  const [categoryAgg, brandAgg, categoryBrandAgg, priceAgg, activeCount, allSales] = await Promise.all([
     prisma.bikeListing.groupBy({
       by: ["category"],
       where: listingWhere,
@@ -158,9 +183,18 @@ async function computeForScope(where: { city?: string; state: string }, since: D
       orderBy: { _sum: { viewCount: "desc" } },
     }),
     prisma.bikeListing.groupBy({
+      by: ["category", "brand"],
+      where: listingWhere,
+      _sum: { viewCount: true },
+      _count: { _all: true },
+      orderBy: { _sum: { viewCount: "desc" } },
+    }),
+    prisma.bikeListing.groupBy({
       by: ["category"],
       where: { ...where, isDemo: false, status: "ACTIVE" },
       _avg: { askingPrice: true },
+      _min: { askingPrice: true },
+      _max: { askingPrice: true },
       _count: { _all: true },
     }),
     prisma.bikeListing.count({ where: { ...where, isDemo: false, status: "ACTIVE" } }),
@@ -168,13 +202,13 @@ async function computeForScope(where: { city?: string; state: string }, since: D
       where: { status: "COMPLETED", isDemo: false, createdAt: { gte: since }, listing: { is: where } },
       include: { listing: { select: { title: true, category: true, brand: true, model: true, year: true, publishedAt: true, createdAt: true, soldAt: true } } },
       orderBy: { createdAt: "desc" },
-      take: 8,
+      take: 30,
     }),
   ]);
 
   const sampleSize = categoryAgg.reduce((n, c) => n + c._count._all, 0);
 
-  const recentSales: RecentSale[] = sales.map((t) => {
+  const allRecentSales: RecentSale[] = allSales.map((t) => {
     const start = t.listing.publishedAt ?? t.listing.createdAt;
     const end = t.listing.soldAt ?? t.createdAt;
     const daysOnMarket = start && end ? Math.max(0, Math.round((end.getTime() - start.getTime()) / 86_400_000)) : null;
@@ -213,16 +247,50 @@ async function computeForScope(where: { city?: string; state: string }, since: D
   return {
     sampleSize,
     activeListingCount: activeCount,
-    completedSaleCount: sales.length,
+    completedSaleCount: allSales.length,
     trendingCategories: categoryStats.slice(0, 5),
     trendingBrands: brandStats.slice(0, 5),
     allCategoryStats: categoryStats,
     allBrandStats: brandStats,
+    categoryBrandAgg,
+    priceAgg,
     priceBenchmarks: priceAgg
       .filter((p) => p._count._all > 0)
       .map((p) => ({ category: p.category, avgAskingCents: Math.round(p._avg.askingPrice ?? 0), listingCount: p._count._all })),
-    recentSales,
+    recentSales: allRecentSales.slice(0, 8),
+    allRecentSales,
     opportunities,
+  };
+}
+
+function buildCategoryDeepDive(
+  category: string,
+  result: Awaited<ReturnType<typeof computeForScope>>,
+  momentum: MomentumStat[]
+): CategoryDeepDive {
+  const stat = result.allCategoryStats.find((c) => c.category === category);
+  const priceRow = result.priceAgg.find((p) => p.category === category);
+  const topBrands: CategoryBrandBreakdown[] = result.categoryBrandAgg
+    .filter((cb) => cb.category === category)
+    .map((cb) => ({ brand: cb.brand, totalViews: cb._sum.viewCount ?? 0, listingCount: cb._count._all }))
+    .sort((a, b) => b.totalViews - a.totalViews)
+    .slice(0, 5);
+  const categorySales = result.allRecentSales.filter((s) => s.category === category);
+  const daysValues = categorySales.map((s) => s.daysOnMarket).filter((d): d is number => d !== null);
+  const avgDaysOnMarket = daysValues.length > 0 ? Math.round(daysValues.reduce((a, b) => a + b, 0) / daysValues.length) : null;
+
+  return {
+    category,
+    totalViews: stat?.totalViews ?? 0,
+    listingCount: stat?.listingCount ?? 0,
+    avgAskingCents: priceRow?._avg.askingPrice != null ? Math.round(priceRow._avg.askingPrice) : null,
+    minAskingCents: priceRow?._min.askingPrice ?? null,
+    maxAskingCents: priceRow?._max.askingPrice ?? null,
+    topBrands,
+    soldCount: categorySales.length,
+    avgDaysOnMarket,
+    recentSales: categorySales.slice(0, 5),
+    momentum: momentum.find((m) => m.category === category) ?? null,
   };
 }
 
@@ -250,7 +318,8 @@ export async function getLocalMarketPulse(
   if (cityResult.sampleSize >= MIN_SAMPLE) {
     const momentum = await computeMomentum(cityWhere);
     const { watchedCategoryStats, watchedBrandStats } = withWatchFlags(cityResult);
-    return { scope: "city", scopeLabel: `${city}, ${state}`, ...cityResult, momentum, watchedCategoryStats, watchedBrandStats };
+    const watchedCategoryDeepDives = Array.from(watchedCategories).map((c) => buildCategoryDeepDive(c, cityResult, momentum));
+    return { scope: "city", scopeLabel: `${city}, ${state}`, ...cityResult, momentum, watchedCategoryStats, watchedBrandStats, watchedCategoryDeepDives };
   }
 
   const stateWhere = { state };
@@ -258,7 +327,8 @@ export async function getLocalMarketPulse(
   if (stateResult.sampleSize >= MIN_SAMPLE) {
     const momentum = await computeMomentum(stateWhere);
     const { watchedCategoryStats, watchedBrandStats } = withWatchFlags(stateResult);
-    return { scope: "state", scopeLabel: state, ...stateResult, momentum, watchedCategoryStats, watchedBrandStats };
+    const watchedCategoryDeepDives = Array.from(watchedCategories).map((c) => buildCategoryDeepDive(c, stateResult, momentum));
+    return { scope: "state", scopeLabel: state, ...stateResult, momentum, watchedCategoryStats, watchedBrandStats, watchedCategoryDeepDives };
   }
 
   return {
@@ -274,5 +344,6 @@ export async function getLocalMarketPulse(
     opportunities: [],
     watchedCategoryStats: [],
     watchedBrandStats: [],
+    watchedCategoryDeepDives: [],
   };
 }
